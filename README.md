@@ -1,2 +1,1 @@
-# ZKDX-Contracts
-ZKDX-Contracts
+# zkDX-Contracts
