@@ -1,4 +1,628 @@
-// Sources flattened with hardhat v2.7.0 https://hardhat.org
+// Sources flattened with hardhat v2.14.0 https://hardhat.org
+
+// File contracts/core/interfaces/IVaultUtils.sol
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+interface IVaultUtils {
+    function updateCumulativeFundingRate(
+        address _collateralToken, address _indexToken) external returns (bool);
+    function validateIncreasePosition(
+        address _account, address _collateralToken,
+        address _indexToken, uint256 _sizeDelta, bool _isLong) external view;
+    function validateDecreasePosition(
+        address _account, address _collateralToken,
+        address _indexToken, uint256 _collateralDelta,
+        uint256 _sizeDelta, bool _isLong, address _receiver) external view;
+    function validateLiquidation(
+        address _account, address _collateralToken,
+        address _indexToken, bool _isLong, bool _raise) external view returns (uint256, uint256);
+    function getEntryFundingRate(
+        address _collateralToken, address _indexToken, bool _isLong) external view returns (uint256);
+    function getPositionFee(
+        address _account, address _collateralToken,
+        address _indexToken, bool _isLong, uint256 _sizeDelta) external view returns (uint256);
+    function getFundingFee(
+        address _account, address _collateralToken,
+        address _indexToken, bool _isLong,
+        uint256 _size, uint256 _entryFundingRate) external view returns (uint256);
+    function getBuyZkusdFeeBasisPoints(
+        address _token, uint256 _zkusdAmount) external view returns (uint256);
+    function getSellZkusdFeeBasisPoints(
+        address _token, uint256 _zkusdAmount) external view returns (uint256);
+    function getSwapFeeBasisPoints(
+        address _tokenIn, address _tokenOut, uint256 _zkusdAmount) external view returns (uint256);
+    function getFeeBasisPoints(
+        address _token, uint256 _zkusdDelta,
+        uint256 _feeBasisPoints, uint256 _taxBasisPoints,
+        bool _increment) external view returns (uint256);
+}
+
+
+// File contracts/core/interfaces/IVault.sol
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+
+interface IVault {
+    function withdrawFees(address _token, address _receiver) external returns (uint256);
+    function directPoolDeposit(address _token) external;
+    function buyZKUSD(address _token, address _receiver) external returns (uint256);
+    function sellZKUSD(address _token, address _receiver) external returns (uint256);
+    function swap(address _tokenIn, address _tokenOut, address _receiver) external returns (uint256);
+    function increasePosition(
+        address _account, address _collateralToken,
+        address _indexToken, uint256 _sizeDelta, bool _isLong) external;
+    function decreasePosition(
+        address _account, address _collateralToken,
+        address _indexToken, uint256 _collateralDelta,
+        uint256 _sizeDelta, bool _isLong, address _receiver) external returns (uint256);
+    function validateLiquidation(
+        address _account, address _collateralToken,
+        address _indexToken, bool _isLong, bool _raise) external view returns (uint256, uint256);
+    function liquidatePosition(
+        address _account, address _collateralToken,
+        address _indexToken, bool _isLong, address _feeReceiver) external;
+
+    function tokenToUsdMin(address _token, uint256 _tokenAmount) external view returns (uint256);
+    function priceFeed() external view returns (address);
+    function fundingRateFactor() external view returns (uint256);
+    function stableFundingRateFactor() external view returns (uint256);
+    function cumulativeFundingRates(address _token) external view returns (uint256);
+    function getNextFundingRate(address _token) external view returns (uint256);
+    function getFeeBasisPoints(
+        address _token, uint256 _zkusdDelta,
+        uint256 _feeBasisPoints, uint256 _taxBasisPoints, bool _increment) external view returns (uint256);
+    function liquidationFeeUsd() external view returns (uint256);
+    function taxBasisPoints() external view returns (uint256);
+    function stableTaxBasisPoints() external view returns (uint256);
+    function mintBurnFeeBasisPoints() external view returns (uint256);
+    function swapFeeBasisPoints() external view returns (uint256);
+    function stableSwapFeeBasisPoints() external view returns (uint256);
+    function marginFeeBasisPoints() external view returns (uint256);
+    function allWhitelistedTokensLength() external view returns (uint256);
+    function allWhitelistedTokens(uint256) external view returns (address);
+    function whitelistedTokens(address _token) external view returns (bool);
+    function stableTokens(address _token) external view returns (bool);
+    function shortableTokens(address _token) external view returns (bool);
+    function equityTokens(address _token) external view returns (bool);
+    function feeReserves(address _token) external view returns (uint256);
+    function globalShortSizes(address _token) external view returns (uint256);
+    function globalShortAveragePrices(address _token) external view returns (uint256);
+    function maxGlobalShortSizes(address _token) external view returns (uint256);
+    function tokenDecimals(address _token) external view returns (uint256);
+    function tokenWeights(address _token) external view returns (uint256);
+    function guaranteedUsd(address _token) external view returns (uint256);
+    function poolAmounts(address _token) external view returns (uint256);
+    function bufferAmounts(address _token) external view returns (uint256);
+    function reservedAmounts(address _token) external view returns (uint256);
+    function zkusdAmounts(address _token) external view returns (uint256);
+    function maxZkusdAmounts(address _token) external view returns (uint256);
+    function getRedemptionAmount(address _token, uint256 _zkusdAmount) external view returns (uint256);
+    function getMaxPrice(address _token) external view returns (uint256);
+    function getMinPrice(address _token) external view returns (uint256);
+    function getDelta(
+        address _indexToken, uint256 _size,
+        uint256 _averagePrice, bool _isLong, uint256 _lastIncreasedTime) external view returns (bool, uint256);
+    function getPosition(
+        address _account, address _collateralToken,
+        address _indexToken, bool _isLong) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, bool, uint256);
+    function isInitialized() external view returns (bool);
+    function isSwapEnabled() external view returns (bool);
+    function isLeverageEnabled() external view returns (bool);
+    function router() external view returns (address);
+    function zkusd() external view returns (address);
+    function gov() external view returns (address);
+    function whitelistedTokenCount() external view returns (uint256);
+    function maxLeverage() external view returns (uint256);
+    function minProfitTime() external view returns (uint256);
+    function hasDynamicFees() external view returns (bool);
+    function fundingInterval() external view returns (uint256);
+    function totalTokenWeights() external view returns (uint256);
+    function getTargetZkusdAmount(address _token) external view returns (uint256);
+    function inManagerMode() external view returns (bool);
+    function inPrivateLiquidationMode() external view returns (bool);
+    function maxGasPrice() external view returns (uint256);
+    function approvedRouters(address _account, address _router) external view returns (bool);
+    function isLiquidator(address _account) external view returns (bool);
+    function isManager(address _account) external view returns (bool);
+    function minProfitBasisPoints(address _token) external view returns (uint256);
+    function tokenBalances(address _token) external view returns (uint256);
+    function lastFundingTimes(address _token) external view returns (uint256);
+
+    function setMaxLeverage(uint256 _maxLeverage) external;
+    function setInManagerMode(bool _inManagerMode) external;
+    function setManager(address _manager, bool _isManager) external;
+    function setIsSwapEnabled(bool _isSwapEnabled) external;
+    function setIsLeverageEnabled(bool _isLeverageEnabled) external;
+    function setMaxGasPrice(uint256 _maxGasPrice) external;
+    function setZkusdAmount(address _token, uint256 _amount) external;
+    function setBufferAmount(address _token, uint256 _amount) external;
+    function setMaxGlobalShortSize(address _token, uint256 _amount) external;
+    function setInPrivateLiquidationMode(bool _inPrivateLiquidationMode) external;
+    function setLiquidator(address _liquidator, bool _isActive) external;
+    function setFundingRate(
+        uint256 _fundingInterval, uint256 _fundingRateFactor,
+        uint256 _stableFundingRateFactor) external;
+    function setFees(
+        uint256 _taxBasisPoints, uint256 _stableTaxBasisPoints,
+        uint256 _mintBurnFeeBasisPoints, uint256 _swapFeeBasisPoints,
+        uint256 _stableSwapFeeBasisPoints, uint256 _marginFeeBasisPoints,
+        uint256 _liquidationFeeUsd, uint256 _minProfitTime, bool _hasDynamicFees) external;
+
+    function setTokenConfig(
+        address _token, uint256 _tokenDecimals,
+        uint256 _redemptionBps, uint256 _minProfitBps,
+        uint256 _maxZkusdAmount, bool _isStable,
+        bool _isShortable, bool _isEquity) external;
+    function setMinProfitTime(uint256 _minProfitTime) external;
+    function setPriceFeed(address _priceFeed) external;
+    function setVaultUtils(IVaultUtils _vaultUtils) external;
+    function setError(uint256 _errorCode, string calldata _error) external;
+    function setAllowStableEquity(bool _allowStaleEquityPrice) external;
+}
+
+
+// File contracts/core/interfaces/IVaultPriceFeed.sol
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+pragma experimental ABIEncoderV2;
+
+interface IVaultPriceFeed {
+
+    function getPrice(address _token, bool _maximise, bool _fresh) external view returns (uint256);
+    function getUpdateFee(bytes[] calldata _updateData) external view returns (uint256);
+    function updatePriceFeeds(bytes[] calldata _priceData) external payable;
+}
+
+
+// File contracts/libraries/Constants.sol
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+library Constants {
+    /* BASE */
+    string public constant ZKDX_ID = "ZKDX";
+    string public constant ZKDX_TOKEN_NAME = "ZKDX";
+    string public constant ZKDX_TOKEN_SYMBOL = "ZKDX";
+    string public constant ZKDLP_ID = "ZKDLP";
+    string public constant ZKDLP_TOKEN_NAME = "ZKDLP";
+    string public constant ZKDLP_TOKEN_SYMBOL = "ZKDLP";
+
+    string public constant ZKUSD_TOKEN_NAME = "ZKUSD";
+    string public constant ZKUSD_TOKEN_SYMBOL = "ZKUSD";
+    /* VaultPriceFeed.sol */
+    uint256 public constant PRICE_PRECISION = 10 ** 30;
+    uint256 public constant ONE_USD = PRICE_PRECISION;
+    uint256 public constant BASIS_POINTS_DIVISOR = 10000;
+    uint256 public constant MAX_SPREAD_BASIS_POINTS = 50;
+    uint256 public constant MAX_ADJUSTMENT_INTERVAL = 2 hours;
+    uint256 public constant MAX_ADJUSTMENT_BASIS_POINTS = 20;
+    address constant internal FLAG_ARBITRUM_SEQ_OFFLINE = address(bytes20(bytes32(uint256(keccak256("chainlink.flags.arbitrum-seq-offline")) - 1)));
+    /* VaultUtils.sol */
+    uint256 public constant FUNDING_RATE_PRECISION = 1000000;
+
+    /* Vault.sol*/
+    uint256 public constant MIN_LEVERAGE = 10000; // 1x
+    uint256 public constant ZKUSD_DECIMALS = 18;
+    uint256 public constant MAX_FEE_BASIS_POINTS = 500; // 5%
+    uint256 public constant MAX_LIQUIDATION_FEE_USD = 100 * PRICE_PRECISION; // 100 USD
+
+    /* OrderBook.sol */
+    uint256 public constant ZKUSD_PRECISION = 1e18;
+
+    /* ZKDLP.sol */
+    uint256 public constant ZKDLP_PRECISION = 10 ** 18;
+    uint256 public constant MAX_COOLDOWN_DURATION = 48 hours;
+
+    /* ShortsTracker */
+    uint256 public constant MAX_INT256 = uint256(type(int256).max);
+}
+
+
+// File contracts/libraries/DataTypes.sol
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+
+library DataTypes {
+    struct IncreaseOrder {
+        address account;
+        address purchaseToken;
+        uint256 purchaseTokenAmount;
+        address collateralToken;
+        address indexToken;
+        uint256 sizeDelta;
+        bool isLong;
+        uint256 triggerPrice;
+        bool triggerAboveThreshold;
+        uint256 executionFee;
+    }
+    struct DecreaseOrder {
+        address account;
+        address collateralToken;
+        uint256 collateralDelta;
+        address indexToken;
+        uint256 sizeDelta;
+        bool isLong;
+        uint256 triggerPrice;
+        bool triggerAboveThreshold;
+        uint256 executionFee;
+    }
+    struct SwapOrder {
+        address account;
+        address[] path;
+        uint256 amountIn;
+        uint256 minOut;
+        uint256 triggerRatio;
+        bool triggerAboveThreshold;
+        bool shouldUnwrap;
+        uint256 executionFee;
+    }
+
+    /* Vault.sol */
+    struct Position {
+        uint256 size;
+        uint256 collateral;
+        uint256 averagePrice; // col average price
+        uint256 entryFundingRate;
+        uint256 reserveAmount;
+        int256 realisedPnl;
+        uint256 lastIncreasedTime;
+    }
+}
+
+
+// File contracts/libraries/Errors.sol
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+library Errors {
+    /* Timelock Error Message*/
+    string public constant Timelock_Invalid_Target = "Timelock: invalid _target";
+    string public constant Timelock_Invalid_Buffer = "Timelock: invalid _buffer";
+    string public constant Timelock_Buffer_Cannot_Be_Decreased = "Timelock: buffer cannot be decreased";
+    string public constant Timelock_invalid_maxLeverage = "Timelock: invalid _maxLeverage";
+    string public constant Timelock_invalid_fundingRateFactor = "Timelock: invalid _fundingRateFactor";
+    string public constant Timelock_invalid_stableFundingRateFactor = "Timelock: invalid _stableFundingRateFactor";
+    string public constant TIMELOCK_INVALID_MAXGASPRICE = "Invalid _maxGasPrice";
+    string public constant TIMELOCK_INVALID_LENGTHS = "Timelock: invalid lengths";
+    string public constant TIMELOCK_MAXTOKENSUPPLY_EXCEEDED = "Timelock: maxTokenSupply exceeded";
+    string public constant TIMELOCK_ACTION_ALREADY_SIGNALLED = "Timelock: action already signalled";
+    string public constant TIMELOCK_ACTION_NOT_SIGNALLED = "Timelock: action not signalled";
+    string public constant TIMELOCK_ACTION_TIME_NOT_YET_PASSED = "Timelock: action time not yet passed";
+    string public constant TIMELOCK_INVALID_ACTION = "Timelock: invalid _action";
+    string public constant TIMELOCK_INVALID_BUFFER = "Timelock: invalid _buffer";
+    /* ZKUSD.sol*/
+    string public constant ZKUSD_FORBIDDEN = "ZKUSD: forbidden";
+    /* BasePositionManagers.sol */
+    string public constant BASEPOSITIONMANAGER_MARK_PRICE_LOWER_THAN_LIMIT      = "BasePositionManager: mark price lower than limit";
+    string public constant BASEPOSITIONMANAGER_MARK_PRICE_HIGHER_THAN_LIMIT     = "BasePositionManager: mark price higher than limit";
+    string public constant BASEPOSITIONMANAGER_INVALID_PATH_LENGTH              = "BasePositionManager: invalid _path.length";
+    string public constant BASEPOSITIONMANAGER_INSUFFICIENT_AMOUNTOUT           = "BasePositionManager: insufficient amountOut";
+    string public constant BASEPOSITIONMANAGER_MAX_GLOBAL_LONGS_EXCEEDED        = "BasePositionManager: max global longs exceeded";
+    string public constant BASEPOSITIONMANAGER_MAX_GLOBAL_SHORTS_EXCEEDED       = "BasePositionManager: max global shorts exceeded";
+    string public constant BASEPOSITIONMANAGER_INVALID_SENDER                   = "BasePositionManager: invalid sender";
+    string public constant BASEPOSITIONMANAGER_TRANSFER_OUT_FAILED              = "BasePositionManager: failed to transfer out ether";
+    /* PositionManager.sol */
+    string public constant POSITIONMANAGER_INVALID_PATH_LENGTH                  = "PositionManager: invalid _path.length";
+    string public constant POSITIONMANAGER_INVALID_PATH                         = "PositionManager: invalid _path";
+    string public constant POSITIONMANAGER_LONG_DEPOSIT                         = "PositionManager: long deposit";
+    string public constant POSITIONMANAGER_LONG_LEVERAGE_DECREASE               = "PositionManager: long leverage decrease";
+    string public constant POSITIONMANAGER_FORBIDDEN                            = "PositionManager: forbidden";
+    /* Router.sol*/
+    string public constant ROUTER_FORBIDDEN                                     = "Router: forbidden";
+    /* ZkdlpManager.sol */
+    string public constant ZKDLPMANAGER_ACTION_NOT_ENABLED                      = "ZkdlpManager: action not enabled";
+    string public constant ZKDLPMANAGER_INVALID_WEIGHT                          = "ZkdlpManager: invalid weight";
+    string public constant ZKDLPMANAGER_INVALID_COOLDOWNDURATION                = "ZkdlpManager: invalid _cooldownDuration";
+    string public constant ZKDLPMANAGER_INVALID_AMOUNT                          = "ZkdlpManager: invalid _amount";
+    string public constant ZKDLPMANAGER_INSUFFICIENT_ZKUSD_OUTPUT               = "ZkdlpManager: insufficient ZKUSD output";
+    string public constant ZKDLPMANAGER_INSUFFICIENT_ZKDLP_OUTPUT               = "ZkdlpManager: insufficient ZKDLP output";
+    string public constant ZKDLPMANAGER_INVALID_ZKDLPAMOUNT                     = "ZkdlpManager: invalid _ZKDLPAmount";
+    string public constant ZKDLPMANAGER_COOLDOWN_DURATION_NOT_YET_PASSED        = "ZkdlpManager: cooldown duration not yet passed";
+    string public constant ZKDLPMANAGER_INSUFFICIENT_OUTPUT                     = "ZkdlpManager: insufficient output";
+    string public constant ZKDLPMANAGER_FORBIDDEN                               = "ZkdlpManager: forbidden";
+    /* ShortsTrack.sol*/
+    string public constant SHORTSTRACKER_FORBIDDEN                              = "ShortsTracker: forbidden";
+    string public constant SHORTSTRACKER_INVALID_HANDLER                        = "ShortsTracker: invalid _handler";
+    string public constant SHORTSTRACKER_ALREADY_MIGRATED                       = "ShortsTracker: already migrated";
+    string public constant SHORTSTRACKER_OVERFLOW                               = "ShortsTracker: overflow";
+    /* VaultUtils.sol*/
+    string public constant VAULT_LOSSES_EXCEED_COLLATERAL                       = "Vault: losses exceed collateral";
+    string public constant VAULT_FEES_EXCEED_COLLATERAL                         = "Vault: fees exceed collateral";
+    string public constant VAULT_LIQUIDATION_FEES_EXCEED_COLLATERAL             = "Vault: liquidation fees exceed collateral";
+    string public constant VAULT_MAXLEVERAGE_EXCEEDED                           = "Vault: maxLeverage exceeded";
+    /* VaultInternal.sol*/
+    string internal constant VAULT_POOLAMOUNT_EXCEEDED                          = "Vault: poolAmount exceeded";
+    string internal constant VAULT_INSUFFICIENT_RESERVE                         = "Vault: insufficient reserve";
+    string internal constant VAULT_MAX_SHORTS_EXCEEDED                          = "Vault: max shorts exceeded";
+    string internal constant VAULT_POOLAMOUNT_BUFFER                            = "Vault: poolAmount < buffer";
+    string internal constant VAULT_INVALID_ERRORCONTROLLER                      = "Vault: invalid errorController";
+    /* Router.sol */
+    string internal constant ROUTER_INVALID_SENDER                              = "Router: invalid sender";
+    string internal constant ROUTER_INVALID_PATH                                = "Router: invalid _path";
+    string internal constant ROUTER_MARK_PRICE_HIGHER_THAN_LIMIT                = "Router: mark price higher than limit";
+    string internal constant ROUTER_MARK_PRICE_LOWER_THAN_LIMIT                 = "Router: mark price lower than limit";
+    string internal constant ROUTER_INVALID_PATH_LENGTH                         = "Router: invalid _path.length";
+    string internal constant ROUTER_INSUFFICIENT_AMOUNTOUT                      = "Router: insufficient amountOut";
+    string internal constant ROUTER_INVALID_PLUGIN                              = "Router: invalid plugin";
+    /* OrderBook.sol*/
+    string internal constant ORDERBOOK_FORBIDDEN                                = "OrderBook: forbidden";
+    string internal constant ORDERBOOK_ALREADY_INITIALIZED                      = "OrderBook: already initialized";
+    string internal constant ORDERBOOK_INVALID_SENDER                           = "OrderBook: invalid sender";
+    string internal constant ORDERBOOK_INVALID_PATH_LENGTH                      = "OrderBook: invalid _path.length";
+    string internal constant ORDERBOOK_INVALID_PATH                             = "OrderBook: invalid _path";
+    string internal constant ORDERBOOK_INVALID_AMOUNTIN                         = "OrderBook: invalid _amountIn";
+    string internal constant ORDERBOOK_INSUFFICIENT_EXECUTION_FEE               = "OrderBook: insufficient execution fee";
+    string internal constant ORDERBOOK_ONLY_WETH_COULD_BE_WRAPPED               = "OrderBook: only weth could be wrapped";
+    string internal constant ORDERBOOK_INCORRECT_VALUE_TRANSFERRED              = "OrderBook: incorrect value transferred";
+    string internal constant ORDERBOOK_INCORRECT_EXECUTION_FEE_TRANSFERRED      = "OrderBook: incorrect execution fee transferred";
+    string internal constant ORDERBOOK_NON_EXISTENT_ORDER                       = "OrderBook: non-existent order";
+    string internal constant ORDERBOOK_INVALID_PRICE_FOR_EXECUTION              = "OrderBook: invalid price for execution";
+    string internal constant ORDERBOOK_INSUFFICIENT_COLLATERAL                  = "OrderBook: insufficient collateral";
+    string internal constant ORDERBOOK_INSUFFICIENT_AMOUNTOUT                   = "OrderBook: insufficient amountOut";
+    /* RewardRouterV2.sol */
+    string internal constant REWARDROUTER_INVALID_AMOUNT                        = "RewardRouter: invalid _amount";
+    string internal constant REWARDROUTER_INVALID_MSG_VALUE                     = "RewardRouter: invalid msg.value";
+    string internal constant REWARDROUTER_ALREADY_INITIALIZED                   = "RewardRouter: already initialized";
+    string internal constant REWARDROUTER_INVALID_ZKUSDAMOUNT                   = "RewardRouter: invalid _zkusdAmount";
+
+    /* YieldToken.sol */
+    string public constant YIELDTOKEN_ACCOUNT_ALREADY_MARKED                    = "YieldToken: _account already marked";
+    string public constant YIELDTOKEN_ACCOUNT_NOT_MARKED                        = "YieldToken: _account not marked";
+    string public constant YIELDTOKEN_TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE         = "YieldToken: transfer amount exceeds allowance";
+    string public constant YIELDTOKEN_MINT_TO_THE_ZERO_ADDRESS                  = "YieldToken: mint to the zero address";
+    string public constant YIELDTOKEN_BURN_FROM_THE_ZERO_ADDRESS                = "YieldToken: burn from the zero address";
+    string public constant YIELDTOKEN_BURN_AMOUNT_EXCEEDS_BALANCE               = "YieldToken: burn amount exceeds balance";
+    string public constant YIELDTOKEN_TRANSFER_FROM_THE_ZERO_ADDRESS            = "YieldToken: transfer from the zero address";
+    string public constant YIELDTOKEN_TRANSFER_TO_THE_ZERO_ADDRESS              = "YieldToken: transfer to the zero address";
+    string public constant YIELDTOKEN_MSG_SENDER_NOT_WHITELISTED                = "YieldToken: msg.sender not whitelisted";
+    string public constant YIELDTOKEN_TRANSFER_AMOUNT_EXCEEDS_BALANCE           = "YieldToken: transfer amount exceeds balance";
+    string public constant YIELDTOKEN_APPROVE_FROM_THE_ZERO_ADDRESS             = "YieldToken: approve from the zero address";
+    string public constant YIELDTOKEN_APPROVE_TO_THE_ZERO_ADDRESS               = "YieldToken: approve to the zero address";
+
+    string public constant MINTABLEBASETOKEN_FORBIDDEN                          = "MintableBaseToken: forbidden";
+    string public constant BASETOKEN_FORBIDDEN                                  = "BaseToken: forbidden";
+    string public constant BASETOKEN_ACCOUNT_ALREADY_MARKED                     = "BaseToken: _account already marked";
+    string public constant BASETOKEN_ACCOUNT_NOT_MARKED                         = "BaseToken: _account not marked";
+    string public constant BASETOKEN_TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE          = "BaseToken: transfer amount exceeds allowance";
+    string public constant BASETOKEN_MINT_TO_THE_ZERO_ADDRESS                   = "BaseToken: mint to the zero address";
+    string public constant BASETOKEN_BURN_FROM_THE_ZERO_ADDRESS                 = "BaseToken: burn from the zero address";
+    string public constant BASETOKEN_BURN_AMOUNT_EXCEEDS_BALANCE                = "BaseToken: burn amount exceeds balance";
+    string public constant BASETOKEN_TRANSFER_FROM_THE_ZERO_ADDRESS             = "BaseToken: transfer from the zero address";
+    string public constant BASETOKEN_TRANSFER_TO_THE_ZERO_ADDRESS               = "BaseToken: transfer to the zero address";
+    string public constant BASETOKEN_MSG_SENDER_NOT_WHITELISTED                 = "BaseToken: msg.sender not whitelisted";
+    string public constant BASETOKEN_TRANSFER_AMOUNT_EXCEEDS_BALANCE            = "BaseToken: transfer amount exceeds balance";
+    string public constant BASETOKEN_APPROVE_FROM_THE_ZERO_ADDRESS              = "BaseToken: approve from the zero address";
+    string public constant BASETOKEN_APPROVE_TO_THE_ZERO_ADDRESS                = "BaseToken: approve to the zero address";
+}
+
+
+// File contracts/libraries/Events.sol
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+library Events {
+    /* BasePositionManager Events */
+    event SetDepositFee(uint256 depositFee);
+    event SetIncreasePositionBufferBps(uint256 increasePositionBufferBps);
+    event SetReferralStorage(address referralStorage);
+    event SetAdmin(address admin);
+    event WithdrawFees(address token, address receiver, uint256 amount);
+    event SetMaxGlobalSizes(address[] tokens, uint256[] longSizes, uint256[] shortSizes);
+    event IncreasePositionReferral(address account, uint256 sizeDelta, uint256 marginFeeBasisPoints, bytes32 referralCode, address referrer);
+    event DecreasePositionReferral(address account, uint256 sizeDelta, uint256 marginFeeBasisPoints, bytes32 referralCode, address referrer);
+    /*Position Manager Events*/
+    event SetOrderKeeper(address indexed account, bool isActive);
+    event SetLiquidator(address indexed account, bool isActive);
+    event SetPartner(address account, bool isActive);
+    event SetOpened(bool opened);
+    event SetShouldValidateIncreaseOrder(bool shouldValidateIncreaseOrder);
+    /* Orderbook.sol events */
+    event CreateSwapOrder(
+        address indexed account, uint256 orderIndex,
+        address[] path, uint256 amountIn, uint256 minOut,
+        uint256 triggerRatio, bool triggerAboveThreshold, bool shouldUnwrap, uint256 executionFee);
+    event CancelSwapOrder(
+        address indexed account, uint256 orderIndex,
+        address[] path, uint256 amountIn, uint256 minOut,
+        uint256 triggerRatio, bool triggerAboveThreshold, bool shouldUnwrap, uint256 executionFee);
+    event UpdateSwapOrder(
+        address indexed account, uint256 ordexIndex, address[] path, uint256 amountIn, uint256 minOut, uint256 triggerRatio, bool triggerAboveThreshold, bool shouldUnwrap, uint256 executionFee);
+    event ExecuteSwapOrder(
+        address indexed account, uint256 orderIndex,
+        address[] path, uint256 amountIn, uint256 minOut,
+        uint256 amountOut, uint256 triggerRatio,
+        bool triggerAboveThreshold, bool shouldUnwrap, uint256 executionFee);
+    event Initialize(
+        address router, address vault, address weth,
+        address zkusd, uint256 minExecutionFee, uint256 minPurchaseTokenAmountUsd);
+    event UpdateMinExecutionFee(uint256 minExecutionFee);
+    event UpdateMinPurchaseTokenAmountUsd(uint256 minPurchaseTokenAmountUsd);
+    event UpdateGov(address gov);
+    /* Router.sol events*/
+    event Swap(address account, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut);
+    /* ShortsTracker.sol events*/
+    event GlobalShortDataUpdated(address indexed token, uint256 globalShortSize, uint256 globalShortAveragePrice);
+    /* Vault.sol events */
+    event BuyZKUSD(
+        address account, address token,
+        uint256 tokenAmount, uint256 zkusdAmount, uint256 feeBasisPoints);
+    event SellZKUSD(
+        address account, address token,
+        uint256 zkusdAmount, uint256 tokenAmount, uint256 feeBasisPoints);
+    event Swap(
+        address account, address tokenIn,
+        address tokenOut, uint256 amountIn,
+        uint256 amountOut, uint256 amountOutAfterFees,
+        uint256 feeBasisPoints);
+    event IncreasePosition(
+        bytes32 key, address account,
+        address collateralToken, address indexToken,
+        uint256 collateralDelta, uint256 sizeDelta,
+        bool isLong, uint256 price, uint256 fee);
+    event DecreasePosition(
+        bytes32 key, address account,
+        address collateralToken, address indexToken,
+        uint256 collateralDelta, uint256 sizeDelta,
+        bool isLong, uint256 price, uint256 fee);
+    event LiquidatePosition(
+        bytes32 key, address account, address collateralToken,
+        address indexToken, bool isLong, uint256 size,
+        uint256 collateral, uint256 reserveAmount, int256 realisedPnl, uint256 markPrice);
+    event UpdatePosition(
+        bytes32 key, uint256 size, uint256 collateral,
+        uint256 averagePrice, uint256 entryFundingRate,
+        uint256 reserveAmount, int256 realisedPnl, uint256 markPrice);
+    event ClosePosition(
+        bytes32 key, uint256 size, uint256 collateral,
+        uint256 averagePrice, uint256 entryFundingRate, uint256 reserveAmount, int256 realisedPnl);
+    event UpdateFundingRate(address token, uint256 fundingRate);
+    event UpdatePnl(bytes32 key, bool hasProfit, uint256 delta);
+    event CollectSwapFees(address token, uint256 feeUsd, uint256 feeTokens);
+    event CollectMarginFees(address token, uint256 feeUsd, uint256 feeTokens);
+    event DirectPoolDeposit(address token, uint256 amount);
+    event IncreasePoolAmount(address token, uint256 amount);
+    event DecreasePoolAmount(address token, uint256 amount);
+    event IncreaseZkusdAmount(address token, uint256 amount);
+    event DecreaseZkusdAmount(address token, uint256 amount);
+    event IncreaseReservedAmount(address token, uint256 amount);
+    event DecreaseReservedAmount(address token, uint256 amount);
+    event IncreaseGuaranteedUsd(address token, uint256 amount);
+    event DecreaseGuaranteedUsd(address token, uint256 amount);
+    /* Timelock.sol events */
+    event SignalPendingAction(bytes32 action);
+    event SignalApprove(address token, address spender, uint256 amount, bytes32 action);
+    event SignalWithdrawToken(address target, address token, address receiver, uint256 amount, bytes32 action);
+    event SignalMint(address token, address receiver, uint256 amount, bytes32 action);
+    event SignalSetGov(address target, address gov, bytes32 action);
+    event SignalSetHandler(address target, address handler, bool isActive, bytes32 action);
+    event SignalSetPriceFeed(address vault, address priceFeed, bytes32 action);
+    event SignalRedeemZkusd(address vault, address token, uint256 amount);
+    event SignalVaultSetTokenConfig(
+        address vault, address token, uint256 tokenDecimals,
+        uint256 tokenWeight, uint256 minProfitBps, uint256 maxZkusdAmount,
+        bool isStable, bool isShortable);
+    event ClearAction(bytes32 action);
+    /* ZkdlpManager.sol */
+    event AddLiquidity(address account, address token, uint256 amount, uint256 aumInUsd, uint256 zkdlpSupply, uint256 zkusdAmount, uint256 mintAmount);
+    event RemoveLiquidity(address account, address token, uint256 zkdlpAmount, uint256 aumInUsd, uint256 zkdlpSupply, uint256 zkusdAmount, uint256 amountOut);
+    /* RewardRouterV2 */
+    event StakeZkdx(address account, address token, uint256 amount);
+    event UnstakeZkdx(address account, address token, uint256 amount);
+    event StakeZkdlp(address account, uint256 amount);
+    event UnstakeZkdlp(address account, uint256 amount);
+
+    /* OrderBook.sol */
+    event CreateIncreaseOrder(
+        address indexed account,
+        uint256 orderIndex,
+        address purchaseToken,
+        uint256 purchaseTokenAmount,
+        address collateralToken,
+        address indexToken,
+        uint256 sizeDelta,
+        bool isLong,
+        uint256 triggerPrice,
+        bool triggerAboveThreshold,
+        uint256 executionFee
+    );
+
+    event CancelIncreaseOrder(
+        address indexed account,
+        uint256 orderIndex,
+        address purchaseToken,
+        uint256 purchaseTokenAmount,
+        address collateralToken,
+        address indexToken,
+        uint256 sizeDelta,
+        bool isLong,
+        uint256 triggerPrice,
+        bool triggerAboveThreshold,
+        uint256 executionFee
+    );
+
+    event ExecuteIncreaseOrder(
+        address indexed account,
+        uint256 orderIndex,
+        address purchaseToken,
+        uint256 purchaseTokenAmount,
+        address collateralToken,
+        address indexToken,
+        uint256 sizeDelta,
+        bool isLong,
+        uint256 triggerPrice,
+        bool triggerAboveThreshold,
+        uint256 executionFee,
+        uint256 executionPrice
+    );
+
+    event UpdateIncreaseOrder(
+        address indexed account,
+        uint256 orderIndex,
+        address collateralToken,
+        address indexToken,
+        bool isLong,
+        uint256 sizeDelta,
+        uint256 triggerPrice,
+        bool triggerAboveThreshold
+    );
+
+    event CreateDecreaseOrder(
+        address indexed account,
+        uint256 orderIndex,
+        address collateralToken,
+        uint256 collateralDelta,
+        address indexToken,
+        uint256 sizeDelta,
+        bool isLong,
+        uint256 triggerPrice,
+        bool triggerAboveThreshold,
+        uint256 executionFee
+    );
+
+    event CancelDecreaseOrder(
+        address indexed account,
+        uint256 orderIndex,
+        address collateralToken,
+        uint256 collateralDelta,
+        address indexToken,
+        uint256 sizeDelta,
+        bool isLong,
+        uint256 triggerPrice,
+        bool triggerAboveThreshold,
+        uint256 executionFee
+    );
+
+    event ExecuteDecreaseOrder(
+        address indexed account,
+        uint256 orderIndex,
+        address collateralToken,
+        uint256 collateralDelta,
+        address indexToken,
+        uint256 sizeDelta,
+        bool isLong,
+        uint256 triggerPrice,
+        bool triggerAboveThreshold,
+        uint256 executionFee,
+        uint256 executionPrice
+    );
+
+    event UpdateDecreaseOrder(
+        address indexed account,
+        uint256 orderIndex,
+        address collateralToken,
+        uint256 collateralDelta,
+        address indexToken,
+        uint256 sizeDelta,
+        bool isLong,
+        uint256 triggerPrice,
+        bool triggerAboveThreshold
+    );
+}
+
 
 // File contracts/libraries/math/SafeMath.sol
 
@@ -254,33 +878,6 @@ pragma solidity ^0.6.2;
  * @dev Collection of functions related to the address type
  */
 library Address {
-    /**
-     * @dev Returns true if `account` is a contract.
-     *
-     * [IMPORTANT]
-     * ====
-     * It is unsafe to assume that an address for which this function returns
-     * false is an externally-owned account (EOA) and not a contract.
-     *
-     * Among others, `isContract` will return false for the following
-     * types of addresses:
-     *
-     *  - an externally-owned account
-     *  - a contract in construction
-     *  - an address where a contract will be created
-     *  - an address where a contract lived, but was destroyed
-     * ====
-     */
-    function isContract(address account) internal view returns (bool) {
-        // This method relies on extcodesize, which returns 0 for contracts in
-        // construction, since the code is only stored at the end of the
-        // constructor execution.
-
-        uint256 size;
-        // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(account) }
-        return size > 0;
-    }
 
     /**
      * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
@@ -325,7 +922,7 @@ library Address {
      * _Available since v3.1._
      */
     function functionCall(address target, bytes memory data) internal returns (bytes memory) {
-      return functionCall(target, data, "Address: low-level call failed");
+        return functionCall(target, data, "Address: low-level call failed");
     }
 
     /**
@@ -361,58 +958,9 @@ library Address {
      */
     function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
         require(address(this).balance >= value, "Address: insufficient balance for call");
-        require(isContract(target), "Address: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = target.call{ value: value }(data);
-        return _verifyCallResult(success, returndata, errorMessage);
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
-     * but performing a static call.
-     *
-     * _Available since v3.3._
-     */
-    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
-        return functionStaticCall(target, data, "Address: low-level static call failed");
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
-     * but performing a static call.
-     *
-     * _Available since v3.3._
-     */
-    function functionStaticCall(address target, bytes memory data, string memory errorMessage) internal view returns (bytes memory) {
-        require(isContract(target), "Address: static call to non-contract");
-
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.staticcall(data);
-        return _verifyCallResult(success, returndata, errorMessage);
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],
-     * but performing a delegate call.
-     *
-     * _Available since v3.3._
-     */
-    function functionDelegateCall(address target, bytes memory data) internal returns (bytes memory) {
-        return functionDelegateCall(target, data, "Address: low-level delegate call failed");
-    }
-
-    /**
-     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],
-     * but performing a delegate call.
-     *
-     * _Available since v3.3._
-     */
-    function functionDelegateCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
-        require(isContract(target), "Address: delegate call to non-contract");
-
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.delegatecall(data);
         return _verifyCallResult(success, returndata, errorMessage);
     }
 
@@ -514,396 +1062,6 @@ library SafeERC20 {
 }
 
 
-// File contracts/libraries/DataTypes.sol
-
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
-
-library DataTypes {
-    struct IncreaseOrder {
-        address account;
-        address purchaseToken;
-        uint256 purchaseTokenAmount;
-        address collateralToken;
-        address indexToken;
-        uint256 sizeDelta;
-        bool isLong;
-        uint256 triggerPrice;
-        bool triggerAboveThreshold;
-        uint256 executionFee;
-    }
-    struct DecreaseOrder {
-        address account;
-        address collateralToken;
-        uint256 collateralDelta;
-        address indexToken;
-        uint256 sizeDelta;
-        bool isLong;
-        uint256 triggerPrice;
-        bool triggerAboveThreshold;
-        uint256 executionFee;
-    }
-    struct SwapOrder {
-        address account;
-        address[] path;
-        uint256 amountIn;
-        uint256 minOut;
-        uint256 triggerRatio;
-        bool triggerAboveThreshold;
-        bool shouldUnwrap;
-        uint256 executionFee;
-    }
-
-    /* Vault.sol */
-    struct Position {
-        uint256 size;
-        uint256 collateral;
-        uint256 averagePrice; // col average price
-        uint256 entryFundingRate;
-        uint256 reserveAmount;
-        int256 realisedPnl;
-        uint256 lastIncreasedTime;
-    }
-}
-
-
-// File contracts/libraries/Constants.sol
-
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
-library Constants {
-    /* BASE */
-    string public constant ZKDX_ID = "ZKDX";
-    string public constant ZKDX_TOKEN_NAME = "ZKDX";
-    string public constant ZKDX_TOKEN_SYMBOL = "ZKDX";
-    string public constant ZKDLP_ID = "ZKDLP";
-    string public constant ZKDLP_TOKEN_NAME = "ZKDLP";
-    string public constant ZKDLP_TOKEN_SYMBOL = "ZKDLP";
-
-    string public constant ZKUSD_TOKEN_NAME = "ZKUSD";
-    string public constant ZKUSD_TOKEN_SYMBOL = "ZKUSD";
-    /* VaultPriceFeed.sol */
-    uint256 public constant PRICE_PRECISION = 10 ** 30;
-    uint256 public constant ONE_USD = PRICE_PRECISION;
-    uint256 public constant BASIS_POINTS_DIVISOR = 10000;
-    uint256 public constant MAX_SPREAD_BASIS_POINTS = 50;
-    uint256 public constant MAX_ADJUSTMENT_INTERVAL = 2 hours;
-    uint256 public constant MAX_ADJUSTMENT_BASIS_POINTS = 20;
-    address constant internal FLAG_ARBITRUM_SEQ_OFFLINE = address(bytes20(bytes32(uint256(keccak256("chainlink.flags.arbitrum-seq-offline")) - 1)));
-    /* VaultUtils.sol */
-    uint256 public constant FUNDING_RATE_PRECISION = 1000000;
-
-    /* Vault.sol*/
-    uint256 public constant MIN_LEVERAGE = 10000; // 1x
-    uint256 public constant ZKUSD_DECIMALS = 18;
-    uint256 public constant MAX_FEE_BASIS_POINTS = 500; // 5%
-    uint256 public constant MAX_LIQUIDATION_FEE_USD = 100 * PRICE_PRECISION; // 100 USD
-    uint256 public constant MIN_FUNDING_RATE_INTERVAL = 1 hours;
-    uint256 public constant MAX_FUNDING_RATE_FACTOR = 10000; // 1%
-
-    /* OrderBook.sol */
-    uint256 public constant ZKUSD_PRECISION = 1e18;
-
-    /* ZKDLP.sol */
-    uint256 public constant ZKDLP_PRECISION = 10 ** 18;
-    uint256 public constant MAX_COOLDOWN_DURATION = 48 hours;
-
-    /* ShortsTracker */
-    uint256 public constant MAX_INT256 = uint256(type(int256).max);
-}
-
-
-// File contracts/libraries/Events.sol
-
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
-library Events {
-    /* BasePositionManager Events */
-    event SetDepositFee(uint256 depositFee);
-    event SetIncreasePositionBufferBps(uint256 increasePositionBufferBps);
-    event SetReferralStorage(address referralStorage);
-    event SetAdmin(address admin);
-    event WithdrawFees(address token, address receiver, uint256 amount);
-    event SetMaxGlobalSizes(address[] tokens, uint256[] longSizes, uint256[] shortSizes);
-    event IncreasePositionReferral(address account, uint256 sizeDelta, uint256 marginFeeBasisPoints, bytes32 referralCode, address referrer);
-    event DecreasePositionReferral(address account, uint256 sizeDelta, uint256 marginFeeBasisPoints, bytes32 referralCode, address referrer);
-    /*Position Manager Events*/
-    event SetOrderKeeper(address indexed account, bool isActive);
-    event SetLiquidator(address indexed account, bool isActive);
-    event SetPartner(address account, bool isActive);
-    event SetOpened(bool opened);
-    event SetShouldValidateIncreaseOrder(bool shouldValidateIncreaseOrder);
-    /* Orderbook.sol events */
-    event CreateIncreaseOrder(
-        address indexed account, uint256 orderIndex,
-        address purchaseToken, uint256 purchaseTokenAmount,
-        address collateralToken, address indexToken,
-        uint256 sizeDelta, bool isLong, uint256 triggerPrice,
-        bool triggerAboveThreshold, uint256 executionFee);
-    event CancelIncreaseOrder(
-        address indexed account, uint256 orderIndex,
-        address purchaseToken, uint256 purchaseTokenAmount,
-        address collateralToken, address indexToken,
-        uint256 sizeDelta, bool isLong, uint256 triggerPrice, bool triggerAboveThreshold, uint256 executionFee);
-    event ExecuteIncreaseOrder(
-        address indexed account, uint256 orderIndex,
-        address purchaseToken, uint256 purchaseTokenAmount,
-        address collateralToken, address indexToken, uint256 sizeDelta,
-        bool isLong, uint256 triggerPrice, bool triggerAboveThreshold, uint256 executionFee, uint256 executionPrice);
-    event UpdateIncreaseOrder(
-        address indexed account, uint256 orderIndex,
-        address collateralToken, address indexToken,
-        bool isLong, uint256 sizeDelta, uint256 triggerPrice, bool triggerAboveThreshold);
-    event CreateDecreaseOrder(address indexed account, uint256 orderIndex, address collateralToken, uint256 collateralDelta, address indexToken, uint256 sizeDelta, bool isLong, uint256 triggerPrice, bool triggerAboveThreshold, uint256 executionFee);
-    event CancelDecreaseOrder(
-        address indexed account, uint256 orderIndex,
-        address collateralToken, uint256 collateralDelta, address indexToken,
-        uint256 sizeDelta, bool isLong, uint256 triggerPrice, bool triggerAboveThreshold, uint256 executionFee);
-    event ExecuteDecreaseOrder(
-        address indexed account, uint256 orderIndex,
-        address collateralToken, uint256 collateralDelta,
-        address indexToken, uint256 sizeDelta, bool isLong,
-        uint256 triggerPrice, bool triggerAboveThreshold, uint256 executionFee, uint256 executionPrice);
-    event UpdateDecreaseOrder(
-        address indexed account, uint256 orderIndex,
-        address collateralToken, uint256 collateralDelta,
-        address indexToken, uint256 sizeDelta, bool isLong, uint256 triggerPrice, bool triggerAboveThreshold);
-    event CreateSwapOrder(
-        address indexed account, uint256 orderIndex,
-        address[] path, uint256 amountIn, uint256 minOut,
-        uint256 triggerRatio, bool triggerAboveThreshold, bool shouldUnwrap, uint256 executionFee);
-    event CancelSwapOrder(
-        address indexed account, uint256 orderIndex,
-        address[] path, uint256 amountIn, uint256 minOut,
-        uint256 triggerRatio, bool triggerAboveThreshold, bool shouldUnwrap, uint256 executionFee);
-    event UpdateSwapOrder(
-        address indexed account, uint256 ordexIndex, address[] path, uint256 amountIn, uint256 minOut, uint256 triggerRatio, bool triggerAboveThreshold, bool shouldUnwrap, uint256 executionFee);
-    event ExecuteSwapOrder(
-        address indexed account, uint256 orderIndex,
-        address[] path, uint256 amountIn, uint256 minOut,
-        uint256 amountOut, uint256 triggerRatio,
-        bool triggerAboveThreshold, bool shouldUnwrap, uint256 executionFee);
-    event Initialize(
-        address router, address vault, address weth,
-        address zkusd, uint256 minExecutionFee, uint256 minPurchaseTokenAmountUsd);
-    event UpdateMinExecutionFee(uint256 minExecutionFee);
-    event UpdateMinPurchaseTokenAmountUsd(uint256 minPurchaseTokenAmountUsd);
-    event UpdateGov(address gov);
-    /* Router.sol events*/
-    event Swap(address account, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut);
-    /* ShortsTracker.sol events*/
-    event GlobalShortDataUpdated(address indexed token, uint256 globalShortSize, uint256 globalShortAveragePrice);
-    /* Vault.sol events */
-    event BuyZKUSD(
-        address account, address token,
-        uint256 tokenAmount, uint256 zkusdAmount, uint256 feeBasisPoints);
-    event SellZKUSD(
-        address account, address token,
-        uint256 zkusdAmount, uint256 tokenAmount, uint256 feeBasisPoints);
-    event Swap(
-        address account, address tokenIn,
-        address tokenOut, uint256 amountIn,
-        uint256 amountOut, uint256 amountOutAfterFees,
-        uint256 feeBasisPoints);
-    event IncreasePosition(
-        bytes32 key, address account,
-        address collateralToken, address indexToken,
-        uint256 collateralDelta, uint256 sizeDelta,
-        bool isLong, uint256 price, uint256 fee);
-    event DecreasePosition(
-        bytes32 key, address account,
-        address collateralToken, address indexToken,
-        uint256 collateralDelta, uint256 sizeDelta,
-        bool isLong, uint256 price, uint256 fee);
-    event LiquidatePosition(
-        bytes32 key, address account, address collateralToken,
-        address indexToken, bool isLong, uint256 size,
-        uint256 collateral, uint256 reserveAmount, int256 realisedPnl, uint256 markPrice);
-    event UpdatePosition(
-        bytes32 key, uint256 size, uint256 collateral,
-        uint256 averagePrice, uint256 entryFundingRate,
-        uint256 reserveAmount, int256 realisedPnl, uint256 markPrice);
-    event ClosePosition(
-        bytes32 key, uint256 size, uint256 collateral,
-        uint256 averagePrice, uint256 entryFundingRate, uint256 reserveAmount, int256 realisedPnl);
-    event UpdateFundingRate(address token, uint256 fundingRate);
-    event UpdatePnl(bytes32 key, bool hasProfit, uint256 delta);
-    event CollectSwapFees(address token, uint256 feeUsd, uint256 feeTokens);
-    event CollectMarginFees(address token, uint256 feeUsd, uint256 feeTokens);
-    event DirectPoolDeposit(address token, uint256 amount);
-    event IncreasePoolAmount(address token, uint256 amount);
-    event DecreasePoolAmount(address token, uint256 amount);
-    event IncreaseZkusdAmount(address token, uint256 amount);
-    event DecreaseZkusdAmount(address token, uint256 amount);
-    event IncreaseReservedAmount(address token, uint256 amount);
-    event DecreaseReservedAmount(address token, uint256 amount);
-    event IncreaseGuaranteedUsd(address token, uint256 amount);
-    event DecreaseGuaranteedUsd(address token, uint256 amount);
-    /* Timelock.sol events */
-    event SignalPendingAction(bytes32 action);
-    event SignalApprove(address token, address spender, uint256 amount, bytes32 action);
-    event SignalWithdrawToken(address target, address token, address receiver, uint256 amount, bytes32 action);
-    event SignalMint(address token, address receiver, uint256 amount, bytes32 action);
-    event SignalSetGov(address target, address gov, bytes32 action);
-    event SignalSetHandler(address target, address handler, bool isActive, bytes32 action);
-    event SignalSetPriceFeed(address vault, address priceFeed, bytes32 action);
-    event SignalRedeemZkusd(address vault, address token, uint256 amount);
-    event SignalVaultSetTokenConfig(
-        address vault, address token, uint256 tokenDecimals,
-        uint256 tokenWeight, uint256 minProfitBps, uint256 maxZkusdAmount,
-        bool isStable, bool isShortable);
-    event ClearAction(bytes32 action);
-    /* ZkdlpManager.sol */
-    event AddLiquidity(address account, address token, uint256 amount, uint256 aumInUsd, uint256 zkdlpSupply, uint256 zkusdAmount, uint256 mintAmount);
-    event RemoveLiquidity(address account, address token, uint256 zkdlpAmount, uint256 aumInUsd, uint256 zkdlpSupply, uint256 zkusdAmount, uint256 amountOut);
-    /* RewardRouterV2 */
-    event StakeZkdx(address account, address token, uint256 amount);
-    event UnstakeZkdx(address account, address token, uint256 amount);
-    event StakeZkdlp(address account, uint256 amount);
-    event UnstakeZkdlp(address account, uint256 amount);
-}
-
-
-// File contracts/libraries/Errors.sol
-
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
-library Errors {
-    /* Timelock Error Message*/
-    string public constant Timelock_Invalid_Target = "Timelock: invalid _target";
-    string public constant Timelock_Invalid_Buffer = "Timelock: invalid _buffer";
-    string public constant Timelock_Buffer_Cannot_Be_Decreased = "Timelock: buffer cannot be decreased";
-    string public constant Timelock_invalid_maxLeverage = "Timelock: invalid _maxLeverage";
-    string public constant Timelock_invalid_fundingRateFactor = "Timelock: invalid _fundingRateFactor";
-    string public constant Timelock_invalid_stableFundingRateFactor = "Timelock: invalid _stableFundingRateFactor";
-    string public constant Timelock_invalid_minProfitBps = "Timelock: invalid _minProfitBps";
-    string public constant Timelock_token_not_yet_whitelisted = "Timelock: token not yet whitelisted";
-    string public constant TIMELOCK_INVALID_MAXGASPRICE = "Invalid _maxGasPrice";
-    string public constant TIMELOCK_INVALID_LENGTHS = "Timelock: invalid lengths";
-    string public constant TIMELOCK_MAXTOKENSUPPLY_EXCEEDED = "Timelock: maxTokenSupply exceeded";
-    string public constant TIMELOCK_ACTION_ALREADY_SIGNALLED = "Timelock: action already signalled";
-    string public constant TIMELOCK_ACTION_NOT_SIGNALLED = "Timelock: action not signalled";
-    string public constant TIMELOCK_ACTION_TIME_NOT_YET_PASSED = "Timelock: action time not yet passed";
-    string public constant TIMELOCK_INVALID_ACTION = "Timelock: invalid _action";
-    string public constant TIMELOCK_INVALID_BUFFER = "Timelock: invalid _buffer";
-    /* PriceFeed Error Message*/
-    string public constant PriceFeed_forbidden = "PriceFeed: forbidden";
-    /* ZKUSD.sol*/
-    string public constant ZKUSD_FORBIDDEN = "ZKUSD: forbidden";
-    /* BasePositionManagers.sol */
-    string public constant BASEPOSITIONMANAGER_MARK_PRICE_LOWER_THAN_LIMIT      = "BasePositionManager: mark price lower than limit";
-    string public constant BASEPOSITIONMANAGER_MARK_PRICE_HIGHER_THAN_LIMIT     = "BasePositionManager: mark price higher than limit";
-    string public constant BASEPOSITIONMANAGER_INVALID_PATH_LENGTH              = "BasePositionManager: invalid _path.length";
-    string public constant BASEPOSITIONMANAGER_INSUFFICIENT_AMOUNTOUT           = "BasePositionManager: insufficient amountOut";
-    string public constant BASEPOSITIONMANAGER_MAX_GLOBAL_LONGS_EXCEEDED        = "BasePositionManager: max global longs exceeded";
-    string public constant BASEPOSITIONMANAGER_MAX_GLOBAL_SHORTS_EXCEEDED       = "BasePositionManager: max global shorts exceeded";
-    string public constant BASEPOSITIONMANAGER_INVALID_SENDER                   = "BasePositionManager: invalid sender";
-    /* PositionManager.sol */
-    string public constant POSITIONMANAGER_INVALID_PATH_LENGTH                  = "PositionManager: invalid _path.length";
-    string public constant POSITIONMANAGER_INVALID_PATH                         = "PositionManager: invalid _path";
-    string public constant POSITIONMANAGER_LONG_DEPOSIT                         = "PositionManager: long deposit";
-    string public constant POSITIONMANAGER_LONG_LEVERAGE_DECREASE               = "PositionManager: long leverage decrease";
-    string public constant POSITIONMANAGER_FORBIDDEN                            = "PositionManager: forbidden";
-    /* Router.sol*/
-    string public constant ROUTER_FORBIDDEN                                     = "Router: forbidden";
-    /* ZkdlpManager.sol */
-    string public constant ZKDLPMANAGER_ACTION_NOT_ENABLED                      = "ZkdlpManager: action not enabled";
-    string public constant ZKDLPMANAGER_INVALID_WEIGHT                          = "ZkdlpManager: invalid weight";
-    string public constant ZKDLPMANAGER_INVALID_COOLDOWNDURATION                = "ZkdlpManager: invalid _cooldownDuration";
-    string public constant ZKDLPMANAGER_INVALID_AMOUNT                          = "ZkdlpManager: invalid _amount";
-    string public constant ZKDLPMANAGER_INSUFFICIENT_ZKUSD_OUTPUT               = "ZkdlpManager: insufficient ZKUSD output";
-    string public constant ZKDLPMANAGER_INSUFFICIENT_ZKDLP_OUTPUT               = "ZkdlpManager: insufficient ZKDLP output";
-    string public constant ZKDLPMANAGER_INVALID_ZKDLPAMOUNT                     = "ZkdlpManager: invalid _ZKDLPAmount";
-    string public constant ZKDLPMANAGER_COOLDOWN_DURATION_NOT_YET_PASSED        = "ZkdlpManager: cooldown duration not yet passed";
-    string public constant ZKDLPMANAGER_INSUFFICIENT_OUTPUT                     = "ZkdlpManager: insufficient output";
-    string public constant ZKDLPMANAGER_FORBIDDEN                               = "ZkdlpManager: forbidden";
-    /* ShortsTrack.sol*/
-    string public constant SHORTSTRACKER_FORBIDDEN                              = "ShortsTracker: forbidden";
-    string public constant SHORTSTRACKER_INVALID_HANDLER                        = "ShortsTracker: invalid _handler";
-    string public constant SHORTSTRACKER_ALREADY_MIGRATED                       = "ShortsTracker: already migrated";
-    string public constant SHORTSTRACKER_OVERFLOW                               = "ShortsTracker: overflow";
-    /* VaultUtils.sol*/
-    string public constant VAULT_LOSSES_EXCEED_COLLATERAL                       = "Vault: losses exceed collateral";
-    string public constant VAULT_FEES_EXCEED_COLLATERAL                         = "Vault: fees exceed collateral";
-    string public constant VAULT_LIQUIDATION_FEES_EXCEED_COLLATERAL             = "Vault: liquidation fees exceed collateral";
-    string public constant VAULT_MAXLEVERAGE_EXCEEDED                           = "Vault: maxLeverage exceeded";
-    /* VaultPriceFeed.sol*/
-    string public constant VAULTPRICEFEED_FORBIDDEN                             = "VaultPriceFeed: forbidden";
-    string public constant VAULTPRICEFEED_ADJUSTMENT_FREQUENCY_EXCEEDED         = "VaultPriceFeed: adjustment frequency exceeded";
-    string public constant VAULTPRICEFEED_INVALID_ADJUSTMENTBPS                 = "Vaultpricefeed: invalid _adjustmentBps";
-    string public constant VAULTPRICEFEED_INVALID_SPREADBASISPOINTS             = "VaultPriceFeed: invalid _spreadBasisPoints";
-    string public constant VAULTPRICEFEED_INVALID_PRICESAMPLESPACE              = "VaultPriceFeed: invalid _priceSampleSpace";
-    string internal constant VAULTPRICEFEED_INVALID_PRICE_FEED                  = "VaultPriceFeed: invalid price feed";
-    string internal constant VAULTPRICEFEED_INVALID_PRICE                       = "VaultPriceFeed: invalid price";
-    string internal constant CHAINLINK_FEEDS_ARE_NOT_BEING_UPDATED              = "Chainlink feeds are not being updated";
-    string internal constant VAULTPRICEFEED_COULD_NOT_FETCH_PRICE               = "VaultPriceFeed: could not fetch price";
-    /* VaultInternal.sol*/
-    string internal constant VAULT_POOLAMOUNT_EXCEEDED                          = "Vault: poolAmount exceeded";
-    string internal constant VAULT_INSUFFICIENT_RESERVE                         = "Vault: insufficient reserve";
-    string internal constant VAULT_MAX_SHORTS_EXCEEDED                          = "Vault: max shorts exceeded";
-    string internal constant VAULT_POOLAMOUNT_BUFFER                            = "Vault: poolAmount < buffer";
-    string internal constant VAULT_INVALID_ERRORCONTROLLER                      = "Vault: invalid errorController";
-    /* Router.sol */
-    string internal constant ROUTER_INVALID_SENDER                              = "Router: invalid sender";
-    string internal constant ROUTER_INVALID_PATH                                = "Router: invalid _path";
-    string internal constant ROUTER_MARK_PRICE_HIGHER_THAN_LIMIT                = "Router: mark price higher than limit";
-    string internal constant ROUTER_MARK_PRICE_LOWER_THAN_LIMIT                 = "Router: mark price lower than limit";
-    string internal constant ROUTER_INVALID_PATH_LENGTH                         = "Router: invalid _path.length";
-    string internal constant ROUTER_INSUFFICIENT_AMOUNTOUT                      = "Router: insufficient amountOut";
-    string internal constant ROUTER_INVALID_PLUGIN                              = "Router: invalid plugin";
-    string internal constant ROUTER_PLUGIN_NOT_APPROVED                         = "Router: plugin not approved";
-    /* OrderBook.sol*/
-    string internal constant ORDERBOOK_FORBIDDEN                                = "OrderBook: forbidden";
-    string internal constant ORDERBOOK_ALREADY_INITIALIZED                      = "OrderBook: already initialized";
-    string internal constant ORDERBOOK_INVALID_SENDER                           = "OrderBook: invalid sender";
-    string internal constant ORDERBOOK_INVALID_PATH_LENGTH                      = "OrderBook: invalid _path.length";
-    string internal constant ORDERBOOK_INVALID_PATH                             = "OrderBook: invalid _path";
-    string internal constant ORDERBOOK_INVALID_AMOUNTIN                         = "OrderBook: invalid _amountIn";
-    string internal constant ORDERBOOK_INSUFFICIENT_EXECUTION_FEE               = "OrderBook: insufficient execution fee";
-    string internal constant ORDERBOOK_ONLY_WETH_COULD_BE_WRAPPED               = "OrderBook: only weth could be wrapped";
-    string internal constant ORDERBOOK_INCORRECT_VALUE_TRANSFERRED              = "OrderBook: incorrect value transferred";
-    string internal constant ORDERBOOK_INCORRECT_EXECUTION_FEE_TRANSFERRED      = "OrderBook: incorrect execution fee transferred";
-    string internal constant ORDERBOOK_NON_EXISTENT_ORDER                       = "OrderBook: non-existent order";
-    string internal constant ORDERBOOK_INVALID_PRICE_FOR_EXECUTION              = "OrderBook: invalid price for execution";
-    string internal constant ORDERBOOK_INSUFFICIENT_COLLATERAL                  = "OrderBook: insufficient collateral";
-    string internal constant ORDERBOOK_INSUFFICIENT_AMOUNTOUT                   = "OrderBook: insufficient amountOut";
-    /* RewardRouterV2.sol */
-    string internal constant REWARDROUTER_INVALID_AMOUNT                        = "RewardRouter: invalid _amount";
-    string internal constant REWARDROUTER_INVALID_MSG_VALUE                     = "RewardRouter: invalid msg.value";
-    string internal constant REWARDROUTER_ALREADY_INITIALIZED                   = "RewardRouter: already initialized";
-    string internal constant REWARDROUTER_INVALID_ZKUSDAMOUNT                   = "RewardRouter: invalid _zkusdAmount";
-
-    /* YieldToken.sol */
-    string public constant YIELDTOKEN_ACCOUNT_ALREADY_MARKED                    = "YieldToken: _account already marked";
-    string public constant YIELDTOKEN_ACCOUNT_NOT_MARKED                        = "YieldToken: _account not marked";
-    string public constant YIELDTOKEN_TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE         = "YieldToken: transfer amount exceeds allowance";
-    string public constant YIELDTOKEN_MINT_TO_THE_ZERO_ADDRESS                  = "YieldToken: mint to the zero address";
-    string public constant YIELDTOKEN_BURN_FROM_THE_ZERO_ADDRESS                = "YieldToken: burn from the zero address";
-    string public constant YIELDTOKEN_BURN_AMOUNT_EXCEEDS_BALANCE               = "YieldToken: burn amount exceeds balance";
-    string public constant YIELDTOKEN_TRANSFER_FROM_THE_ZERO_ADDRESS            = "YieldToken: transfer from the zero address";
-    string public constant YIELDTOKEN_TRANSFER_TO_THE_ZERO_ADDRESS              = "YieldToken: transfer to the zero address";
-    string public constant YIELDTOKEN_MSG_SENDER_NOT_WHITELISTED                = "YieldToken: msg.sender not whitelisted";
-    string public constant YIELDTOKEN_TRANSFER_AMOUNT_EXCEEDS_BALANCE           = "YieldToken: transfer amount exceeds balance";
-    string public constant YIELDTOKEN_APPROVE_FROM_THE_ZERO_ADDRESS             = "YieldToken: approve from the zero address";
-    string public constant YIELDTOKEN_APPROVE_TO_THE_ZERO_ADDRESS               = "YieldToken: approve to the zero address";
-
-    string public constant MINTABLEBASETOKEN_FORBIDDEN                          = "MintableBaseToken: forbidden";
-    string public constant BASETOKEN_FORBIDDEN                                  = "BaseToken: forbidden";
-    string public constant BASETOKEN_ACCOUNT_ALREADY_MARKED                     = "BaseToken: _account already marked";
-    string public constant BASETOKEN_ACCOUNT_NOT_MARKED                         = "BaseToken: _account not marked";
-    string public constant BASETOKEN_TRANSFER_AMOUNT_EXCEEDS_ALLOWANCE          = "BaseToken: transfer amount exceeds allowance";
-    string public constant BASETOKEN_MINT_TO_THE_ZERO_ADDRESS                   = "BaseToken: mint to the zero address";
-    string public constant BASETOKEN_BURN_FROM_THE_ZERO_ADDRESS                 = "BaseToken: burn from the zero address";
-    string public constant BASETOKEN_BURN_AMOUNT_EXCEEDS_BALANCE                = "BaseToken: burn amount exceeds balance";
-    string public constant BASETOKEN_TRANSFER_FROM_THE_ZERO_ADDRESS             = "BaseToken: transfer from the zero address";
-    string public constant BASETOKEN_TRANSFER_TO_THE_ZERO_ADDRESS               = "BaseToken: transfer to the zero address";
-    string public constant BASETOKEN_MSG_SENDER_NOT_WHITELISTED                 = "BaseToken: msg.sender not whitelisted";
-    string public constant BASETOKEN_TRANSFER_AMOUNT_EXCEEDS_BALANCE            = "BaseToken: transfer amount exceeds balance";
-    string public constant BASETOKEN_APPROVE_FROM_THE_ZERO_ADDRESS              = "BaseToken: approve from the zero address";
-    string public constant BASETOKEN_APPROVE_TO_THE_ZERO_ADDRESS                = "BaseToken: approve to the zero address";
-}
-
-
 // File contracts/libraries/utils/ReentrancyGuard.sol
 
 // SPDX-License-Identifier: MIT
@@ -970,192 +1128,6 @@ contract ReentrancyGuard {
 }
 
 
-// File contracts/core/interfaces/IVaultUtils.sol
-
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
-interface IVaultUtils {
-    function updateCumulativeFundingRate(
-        address _collateralToken, address _indexToken) external returns (bool);
-    function validateIncreasePosition(
-        address _account, address _collateralToken,
-        address _indexToken, uint256 _sizeDelta, bool _isLong) external view;
-    function validateDecreasePosition(
-        address _account, address _collateralToken,
-        address _indexToken, uint256 _collateralDelta,
-        uint256 _sizeDelta, bool _isLong, address _receiver) external view;
-    function validateLiquidation(
-        address _account, address _collateralToken,
-        address _indexToken, bool _isLong, bool _raise) external view returns (uint256, uint256);
-    function getEntryFundingRate(
-        address _collateralToken, address _indexToken, bool _isLong) external view returns (uint256);
-    function getPositionFee(
-        address _account, address _collateralToken,
-        address _indexToken, bool _isLong, uint256 _sizeDelta) external view returns (uint256);
-    function getFundingFee(
-        address _account, address _collateralToken,
-        address _indexToken, bool _isLong,
-        uint256 _size, uint256 _entryFundingRate) external view returns (uint256);
-    function getBuyZkusdFeeBasisPoints(
-        address _token, uint256 _zkusdAmount) external view returns (uint256);
-    function getSellZkusdFeeBasisPoints(
-        address _token, uint256 _zkusdAmount) external view returns (uint256);
-    function getSwapFeeBasisPoints(
-        address _tokenIn, address _tokenOut, uint256 _zkusdAmount) external view returns (uint256);
-    function getFeeBasisPoints(
-        address _token, uint256 _zkusdDelta,
-        uint256 _feeBasisPoints, uint256 _taxBasisPoints,
-        bool _increment) external view returns (uint256);
-}
-
-
-// File contracts/core/interfaces/IVault.sol
-
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
-
-interface IVault {
-    function withdrawFees(address _token, address _receiver) external returns (uint256);
-    function directPoolDeposit(address _token) external;
-    function buyZKUSD(address _token, address _receiver) external returns (uint256);
-    function sellZKUSD(address _token, address _receiver) external returns (uint256);
-    function swap(address _tokenIn, address _tokenOut, address _receiver) external returns (uint256);
-    function increasePosition(
-        address _account, address _collateralToken,
-        address _indexToken, uint256 _sizeDelta, bool _isLong) external;
-    function decreasePosition(
-        address _account, address _collateralToken,
-        address _indexToken, uint256 _collateralDelta,
-        uint256 _sizeDelta, bool _isLong, address _receiver) external returns (uint256);
-    function validateLiquidation(
-        address _account, address _collateralToken,
-        address _indexToken, bool _isLong, bool _raise) external view returns (uint256, uint256);
-    function liquidatePosition(
-        address _account, address _collateralToken,
-        address _indexToken, bool _isLong, address _feeReceiver) external;
-
-    function tokenToUsdMin(address _token, uint256 _tokenAmount) external view returns (uint256);
-    function priceFeed() external view returns (address);
-    function fundingRateFactor() external view returns (uint256);
-    function stableFundingRateFactor() external view returns (uint256);
-    function cumulativeFundingRates(address _token) external view returns (uint256);
-    function getNextFundingRate(address _token) external view returns (uint256);
-    function getFeeBasisPoints(
-        address _token, uint256 _zkusdDelta,
-        uint256 _feeBasisPoints, uint256 _taxBasisPoints, bool _increment) external view returns (uint256);
-    function liquidationFeeUsd() external view returns (uint256);
-    function taxBasisPoints() external view returns (uint256);
-    function stableTaxBasisPoints() external view returns (uint256);
-    function mintBurnFeeBasisPoints() external view returns (uint256);
-    function swapFeeBasisPoints() external view returns (uint256);
-    function stableSwapFeeBasisPoints() external view returns (uint256);
-    function marginFeeBasisPoints() external view returns (uint256);
-    function allWhitelistedTokensLength() external view returns (uint256);
-    function allWhitelistedTokens(uint256) external view returns (address);
-    function whitelistedTokens(address _token) external view returns (bool);
-    function stableTokens(address _token) external view returns (bool);
-    function shortableTokens(address _token) external view returns (bool);
-    function feeReserves(address _token) external view returns (uint256);
-    function globalShortSizes(address _token) external view returns (uint256);
-    function globalShortAveragePrices(address _token) external view returns (uint256);
-    function maxGlobalShortSizes(address _token) external view returns (uint256);
-    function tokenDecimals(address _token) external view returns (uint256);
-    function tokenWeights(address _token) external view returns (uint256);
-    function guaranteedUsd(address _token) external view returns (uint256);
-    function poolAmounts(address _token) external view returns (uint256);
-    function bufferAmounts(address _token) external view returns (uint256);
-    function reservedAmounts(address _token) external view returns (uint256);
-    function zkusdAmounts(address _token) external view returns (uint256);
-    function maxZkusdAmounts(address _token) external view returns (uint256);
-    function getRedemptionAmount(address _token, uint256 _zkusdAmount) external view returns (uint256);
-    function getMaxPrice(address _token) external view returns (uint256);
-    function getMinPrice(address _token) external view returns (uint256);
-    function getDelta(
-        address _indexToken, uint256 _size,
-        uint256 _averagePrice, bool _isLong, uint256 _lastIncreasedTime) external view returns (bool, uint256);
-    function getPosition(
-        address _account, address _collateralToken,
-        address _indexToken, bool _isLong) external view returns (uint256, uint256, uint256, uint256, uint256, uint256, bool, uint256);
-    function isInitialized() external view returns (bool);
-    function isSwapEnabled() external view returns (bool);
-    function isLeverageEnabled() external view returns (bool);
-    function router() external view returns (address);
-    function zkusd() external view returns (address);
-    function gov() external view returns (address);
-    function whitelistedTokenCount() external view returns (uint256);
-    function maxLeverage() external view returns (uint256);
-    function minProfitTime() external view returns (uint256);
-    function hasDynamicFees() external view returns (bool);
-    function fundingInterval() external view returns (uint256);
-    function totalTokenWeights() external view returns (uint256);
-    function getTargetZkusdAmount(address _token) external view returns (uint256);
-    function inManagerMode() external view returns (bool);
-    function inPrivateLiquidationMode() external view returns (bool);
-    function maxGasPrice() external view returns (uint256);
-    function approvedRouters(address _account, address _router) external view returns (bool);
-    function isLiquidator(address _account) external view returns (bool);
-    function isManager(address _account) external view returns (bool);
-    function minProfitBasisPoints(address _token) external view returns (uint256);
-    function tokenBalances(address _token) external view returns (uint256);
-    function lastFundingTimes(address _token) external view returns (uint256);
-
-    function setMaxLeverage(uint256 _maxLeverage) external;
-    function setInManagerMode(bool _inManagerMode) external;
-    function setManager(address _manager, bool _isManager) external;
-    function setIsSwapEnabled(bool _isSwapEnabled) external;
-    function setIsLeverageEnabled(bool _isLeverageEnabled) external;
-    function setMaxGasPrice(uint256 _maxGasPrice) external;
-    function setZkusdAmount(address _token, uint256 _amount) external;
-    function setBufferAmount(address _token, uint256 _amount) external;
-    function setMaxGlobalShortSize(address _token, uint256 _amount) external;
-    function setInPrivateLiquidationMode(bool _inPrivateLiquidationMode) external;
-    function setLiquidator(address _liquidator, bool _isActive) external;
-    function setFundingRate(
-        uint256 _fundingInterval, uint256 _fundingRateFactor,
-        uint256 _stableFundingRateFactor) external;
-    function setFees(
-        uint256 _taxBasisPoints, uint256 _stableTaxBasisPoints,
-        uint256 _mintBurnFeeBasisPoints, uint256 _swapFeeBasisPoints,
-        uint256 _stableSwapFeeBasisPoints, uint256 _marginFeeBasisPoints,
-        uint256 _liquidationFeeUsd, uint256 _minProfitTime, bool _hasDynamicFees) external;
-
-    function setTokenConfig(
-        address _token, uint256 _tokenDecimals,
-        uint256 _redemptionBps, uint256 _minProfitBps,
-        uint256 _maxZkusdAmount, bool _isStable, bool _isShortable) external;
-    function setPriceFeed(address _priceFeed) external;
-    function setVaultUtils(IVaultUtils _vaultUtils) external;
-    function setError(uint256 _errorCode, string calldata _error) external;
-}
-
-
-// File contracts/core/interfaces/IVaultPriceFeed.sol
-
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
-
-interface IVaultPriceFeed {
-    function adjustmentBasisPoints(address _token) external view returns (uint256);
-    function isAdjustmentAdditive(address _token) external view returns (bool);
-    function setAdjustment(address _token, bool _isAdditive, uint256 _adjustmentBps) external;
-    function setUseV2Pricing(bool _useV2Pricing) external;
-    function setIsAmmEnabled(bool _isEnabled) external;
-    function setIsSecondaryPriceEnabled(bool _isEnabled) external;
-    function setSpreadBasisPoints(address _token, uint256 _spreadBasisPoints) external;
-    function setSpreadThresholdBasisPoints(uint256 _spreadThresholdBasisPoints) external;
-    function setFavorPrimaryPrice(bool _favorPrimaryPrice) external;
-    function setPriceSampleSpace(uint256 _priceSampleSpace) external;
-    function setMaxStrictPriceDeviation(uint256 _maxStrictPriceDeviation) external;
-    function getPrice(address _token, bool _maximise, bool _includeAmmPrice, bool _useSwapPricing) external view returns (uint256);
-    function getAmmPrice(address _token) external view returns (uint256);
-    function getLatestPrimaryPrice(address _token) external view returns (uint256);
-    function getPrimaryPrice(address _token, bool _maximise) external view returns (uint256);
-    function setTokenConfig(
-        address _token, address _priceFeed,
-        uint256 _priceDecimals, bool _isStrictStable) external;
-}
-
-
 // File contracts/tokens/interfaces/IZKUSD.sol
 
 // SPDX-License-Identifier: MIT
@@ -1185,6 +1157,7 @@ pragma solidity ^0.6.0;
 
 
 abstract contract VaultAggregators is IVault, ReentrancyGuard {
+
 }
 
 
@@ -1204,10 +1177,10 @@ abstract contract VaultStorage is VaultAggregators {
     uint256 public override fundingRateFactor;
     uint256 public override stableFundingRateFactor;
     /* Logic */
-    mapping(bytes32 => DataTypes.Position) public positions; //done
-    mapping(address => uint256) public override poolAmounts; //Token => Pool Amount
-    mapping(address => uint256) public override reservedAmounts; // Token=> Debt Amount
-    uint256 public override maxLeverage = 50 * 10000; // 50x
+    mapping(bytes32 => DataTypes.Position) public positions;
+    mapping(address => uint256) public override poolAmounts;
+    mapping(address => uint256) public override reservedAmounts;
+    uint256 public override maxLeverage = 100 * 10000; // 50x
     uint256 public override taxBasisPoints = 50; // 0.5%
     uint256 public override stableTaxBasisPoints = 20; // 0.2%
     uint256 public override mintBurnFeeBasisPoints = 30; // 0.3%
@@ -1221,10 +1194,8 @@ abstract contract VaultStorage is VaultAggregators {
     bool public override isSwapEnabled = true;
     bool public override isLeverageEnabled = true;
     bool public override hasDynamicFees = false;
-    bool public includeAmmPrice = true;
-    bool public useSwapPricing = false;
     bool public override inManagerMode = false;
-    bool public override inPrivateLiquidationMode = false;
+    bool public override inPrivateLiquidationMode = true;
     IVaultUtils public vaultUtils;
     address public errorController;
     mapping(address => mapping(address => bool)) public override approvedRouters;
@@ -1233,12 +1204,13 @@ abstract contract VaultStorage is VaultAggregators {
     mapping(address => uint256) public override minProfitBasisPoints;
     mapping(address => bool) public override stableTokens;
     mapping(address => bool) public override shortableTokens;
+    mapping(address => bool) public override equityTokens;
     mapping(address => uint256) public override bufferAmounts;
-    mapping(address => uint256) public override guaranteedUsd; // long debt - usd
-    mapping(address => uint256) public override cumulativeFundingRates;  // borrow fee
+    mapping(address => uint256) public override guaranteedUsd;
+    mapping(address => uint256) public override cumulativeFundingRates;
     mapping(address => uint256) public override lastFundingTimes;
-    mapping(address => uint256) public override feeReserves; // fee token=>balance
-    mapping(address => uint256) public override globalShortSizes; // short debt = usd
+    mapping(address => uint256) public override feeReserves;
+    mapping(address => uint256) public override globalShortSizes;
     mapping(address => uint256) public override globalShortAveragePrices;
     mapping(address => uint256) public override maxGlobalShortSizes;
     mapping(uint256 => string) public errors;
@@ -1252,6 +1224,7 @@ abstract contract VaultStorage is VaultAggregators {
     mapping(address => bool) public override whitelistedTokens;
     mapping(address => uint256) public override zkusdAmounts;
     mapping(address => uint256) public override maxZkusdAmounts;
+    bool public allowStaleEquityPrice;
     /* misc */
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -1264,75 +1237,98 @@ abstract contract VaultStorage is VaultAggregators {
 pragma solidity 0.6.12;
 
 abstract contract VaultSettings is VaultStorage {
+
     function _onlyGov() internal view {
         _validate(msg.sender == gov, 53);
     }
+
     function setVaultUtils(IVaultUtils _vaultUtils) external override {
         _onlyGov();
         vaultUtils = _vaultUtils;
     }
+
     function setErrorController(address _errorController) external {
         _onlyGov();
         errorController = _errorController;
     }
+
     function setError(uint256 _errorCode, string calldata _error) external override {
         require(msg.sender == errorController, Errors.VAULT_INVALID_ERRORCONTROLLER);
         errors[_errorCode] = _error;
     }
+
     function setInManagerMode(bool _inManagerMode) external override {
         _onlyGov();
         inManagerMode = _inManagerMode;
     }
+
     function setManager(address _manager, bool _isManager) external override {
         _onlyGov();
         isManager[_manager] = _isManager;
     }
+
     function setInPrivateLiquidationMode(bool _inPrivateLiquidationMode) external override {
         _onlyGov();
         inPrivateLiquidationMode = _inPrivateLiquidationMode;
     }
+
     function setLiquidator(address _liquidator, bool _isActive) external override {
         _onlyGov();
         isLiquidator[_liquidator] = _isActive;
     }
+
     function setIsSwapEnabled(bool _isSwapEnabled) external override {
         _onlyGov();
         isSwapEnabled = _isSwapEnabled;
     }
+
     function setIsLeverageEnabled(bool _isLeverageEnabled) external override {
         _onlyGov();
         isLeverageEnabled = _isLeverageEnabled;
     }
+
     function setMaxGasPrice(uint256 _maxGasPrice) external override {
         _onlyGov();
         maxGasPrice = _maxGasPrice;
     }
+
     function setGov(address _gov) external {
         _onlyGov();
         gov = _gov;
     }
+
     function setPriceFeed(address _priceFeed) external override {
         _onlyGov();
         priceFeed = _priceFeed;
     }
+
     function setMaxLeverage(uint256 _maxLeverage) external override {
         _onlyGov();
         _validate(_maxLeverage > Constants.MIN_LEVERAGE, 2);
         maxLeverage = _maxLeverage;
     }
+
     function setBufferAmount(address _token, uint256 _amount) external override {
         _onlyGov();
         bufferAmounts[_token] = _amount;
     }
+
     function setMaxGlobalShortSize(address _token, uint256 _amount) external override {
         _onlyGov();
         maxGlobalShortSizes[_token] = _amount;
     }
+
     function setFees(
-        uint256 _taxBasisPoints, uint256 _stableTaxBasisPoints,
-        uint256 _mintBurnFeeBasisPoints, uint256 _swapFeeBasisPoints,
-        uint256 _stableSwapFeeBasisPoints, uint256 _marginFeeBasisPoints,
-        uint256 _liquidationFeeUsd, uint256 _minProfitTime, bool _hasDynamicFees) external override {
+        uint256 _taxBasisPoints,
+        uint256 _stableTaxBasisPoints,
+        uint256 _mintBurnFeeBasisPoints,
+        uint256 _swapFeeBasisPoints,
+        uint256 _stableSwapFeeBasisPoints,
+        uint256 _marginFeeBasisPoints,
+        uint256 _liquidationFeeUsd,
+        uint256 _minProfitTime,
+        bool _hasDynamicFees
+    ) external override {
 
         _onlyGov();
         _validate(_taxBasisPoints <= Constants.MAX_FEE_BASIS_POINTS, 3);
@@ -1352,20 +1348,24 @@ abstract contract VaultSettings is VaultStorage {
         minProfitTime = _minProfitTime;
         hasDynamicFees = _hasDynamicFees;
     }
+
     function setFundingRate(uint256 _fundingInterval, uint256 _fundingRateFactor, uint256 _stableFundingRateFactor) external override {
         _onlyGov();
-        // TODO K
-//        _validate(_fundingInterval >= Constants.MIN_FUNDING_RATE_INTERVAL, 10);
-//        _validate(_fundingRateFactor <= Constants.MAX_FUNDING_RATE_FACTOR, 11);
-//        _validate(_stableFundingRateFactor <= Constants.MAX_FUNDING_RATE_FACTOR, 12);
         fundingInterval = _fundingInterval;
         fundingRateFactor = _fundingRateFactor;
         stableFundingRateFactor = _stableFundingRateFactor;
     }
+
     function setTokenConfig(
-        address _token, uint256 _tokenDecimals,
-        uint256 _tokenWeight, uint256 _minProfitBps,
-        uint256 _maxZkusdAmount, bool _isStable, bool _isShortable) external override {
+        address _token,
+        uint256 _tokenDecimals,
+        uint256 _tokenWeight,
+        uint256 _minProfitBps,
+        uint256 _maxZkusdAmount,
+        bool _isStable,
+        bool _isShortable,
+        bool _isEquity
+    ) external override {
         _onlyGov();
         if (!whitelistedTokens[_token]) {
             whitelistedTokenCount = whitelistedTokenCount.add(1);
@@ -1381,9 +1381,15 @@ abstract contract VaultSettings is VaultStorage {
         maxZkusdAmounts[_token] = _maxZkusdAmount;
         stableTokens[_token] = _isStable;
         shortableTokens[_token] = _isShortable;
+        equityTokens[_token] = _isEquity;
         totalTokenWeights = _totalTokenWeights.add(_tokenWeight);
-        getMaxPrice(_token);
     }
+
+    function setMinProfitTime(uint256 _minProfitTime) external override {
+        _onlyGov();
+        minProfitTime = _minProfitTime;
+    }
+
     function setZkusdAmount(address _token, uint256 _amount) external override {
         _onlyGov();
         uint256 zkusdAmount = zkusdAmounts[_token];
@@ -1393,9 +1399,16 @@ abstract contract VaultSettings is VaultStorage {
         }
         _decreaseZkusdAmount(_token, zkusdAmount.sub(_amount));
     }
+
+    function setAllowStableEquity(bool _allowStaleEquityPrice) external override {
+        _onlyGov();
+        allowStaleEquityPrice = _allowStaleEquityPrice;
+    }
+
     function _validate(bool _condition, uint256 _errorCode) internal view {
         require(_condition, errors[_errorCode]);
     }
+
     function _increaseZkusdAmount(address _token, uint256 _amount) internal {
         zkusdAmounts[_token] = zkusdAmounts[_token].add(_amount);
         uint256 maxZkusdAmount = maxZkusdAmounts[_token];
@@ -1404,6 +1417,7 @@ abstract contract VaultSettings is VaultStorage {
         }
         emit Events.IncreaseZkusdAmount(_token, _amount);
     }
+
     function _decreaseZkusdAmount(address _token, uint256 _amount) internal {
         uint256 value = zkusdAmounts[_token];
         if (value <= _amount) {
@@ -1414,49 +1428,6 @@ abstract contract VaultSettings is VaultStorage {
         zkusdAmounts[_token] = value.sub(_amount);
         emit Events.DecreaseZkusdAmount(_token, _amount);
     }
-    function getMaxPrice(address _token) public override view returns (uint256) {
-        return IVaultPriceFeed(priceFeed).getPrice(_token, true, includeAmmPrice, useSwapPricing);
-    }
-
-
-
-
-//    function getRedemptionCollateral(address _token) public view returns (uint256) {
-//        if (stableTokens[_token]) {
-//            return poolAmounts[_token];
-//        }
-//        uint256 collateral = usdToTokenMin(_token, guaranteedUsd[_token]);
-//        return collateral.add(poolAmounts[_token]).sub(reservedAmounts[_token]);
-//    }
-//    function getRedemptionCollateralUsd(address _token) public view returns (uint256) {
-//        return tokenToUsdMin(_token, getRedemptionCollateral(_token));
-//    }
-//    function getPositionDelta(address _account, address _collateralToken, address _indexToken, bool _isLong) public view returns (bool, uint256) {
-//        bytes32 key = getPositionKey(_account, _collateralToken, _indexToken, _isLong);
-//        DataTypes.Position memory position = positions[key];
-//        return getDelta(_indexToken, position.size, position.averagePrice, _isLong, position.lastIncreasedTime);
-//    }
-//    function getUtilisation(address _token) public view returns (uint256) {
-//        uint256 poolAmount = poolAmounts[_token];
-//        if (poolAmount == 0) {return 0;}
-//        return reservedAmounts[_token].mul(Constants.FUNDING_RATE_PRECISION).div(poolAmount);
-//    }
-//    function getPositionLeverage(address _account, address _collateralToken, address _indexToken, bool _isLong) public view returns (uint256) {
-//        bytes32 key = getPositionKey(_account, _collateralToken, _indexToken, _isLong);
-//        DataTypes.Position memory position = positions[key];
-//        _validate(position.collateral > 0, 37);
-//        return position.size.mul(Constants.BASIS_POINTS_DIVISOR).div(position.collateral);
-//    }
-//    function getGlobalShortDelta(address _token) public view returns (bool, uint256) {
-//            uint256 size = globalShortSizes[_token];
-//            if (size == 0) {return (false, 0);}
-//            uint256 nextPrice = getMaxPrice(_token);
-//            uint256 averagePrice = globalShortAveragePrices[_token];
-//            uint256 priceDelta = averagePrice > nextPrice ? averagePrice.sub(nextPrice) : nextPrice.sub(averagePrice);
-//            uint256 delta = size.mul(priceDelta).div(averagePrice);
-//            bool hasProfit = averagePrice > nextPrice;
-//            return (hasProfit, delta);
-//        }
 }
 
 
@@ -1466,6 +1437,7 @@ abstract contract VaultSettings is VaultStorage {
 pragma solidity 0.6.12;
 
 abstract contract VaultInternal is VaultSettings {
+
     function _reduceCollateral(
         address _account, address _collateralToken,
         address _indexToken, uint256 _collateralDelta,
@@ -1519,6 +1491,7 @@ abstract contract VaultInternal is VaultSettings {
         emit Events.UpdatePnl(key, hasProfit, adjustedDelta);
         return (usdOut, usdOutAfterFee);
     }
+
     function _collectSwapFees(address _token, uint256 _amount, uint256 _feeBasisPoints) internal returns (uint256) {
         uint256 afterFeeAmount = _amount.mul(Constants.BASIS_POINTS_DIVISOR.sub(_feeBasisPoints)).div(Constants.BASIS_POINTS_DIVISOR);
         uint256 feeAmount = _amount.sub(afterFeeAmount);
@@ -1526,6 +1499,7 @@ abstract contract VaultInternal is VaultSettings {
         emit Events.CollectSwapFees(_token, tokenToUsdMin(_token, feeAmount), feeAmount);
         return afterFeeAmount;
     }
+
     function _collectMarginFees(address _account, address _collateralToken, address _indexToken, bool _isLong, uint256 _sizeDelta, uint256 _size, uint256 _entryFundingRate) internal returns (uint256) {
         uint256 feeUsd = getPositionFee(_account, _collateralToken, _indexToken, _isLong, _sizeDelta);
         uint256 fundingFee = getFundingFee(_account, _collateralToken, _indexToken, _isLong, _size, _entryFundingRate);
@@ -1535,48 +1509,58 @@ abstract contract VaultInternal is VaultSettings {
         emit Events.CollectMarginFees(_collateralToken, feeUsd, feeTokens);
         return feeUsd;
     }
+
     function _transferIn(address _token) internal returns (uint256) {
         uint256 prevBalance = tokenBalances[_token];
         uint256 nextBalance = IERC20(_token).balanceOf(address(this));
         tokenBalances[_token] = nextBalance;
         return nextBalance.sub(prevBalance);
     }
+
     function _transferOut(address _token, uint256 _amount, address _receiver) internal {
         IERC20(_token).safeTransfer(_receiver, _amount);
         tokenBalances[_token] = IERC20(_token).balanceOf(address(this));
     }
+
     function _updateTokenBalance(address _token) internal {
         uint256 nextBalance = IERC20(_token).balanceOf(address(this));
         tokenBalances[_token] = nextBalance;
     }
+
     function _increasePoolAmount(address _token, uint256 _amount) internal {
         poolAmounts[_token] = poolAmounts[_token].add(_amount);
         uint256 balance = IERC20(_token).balanceOf(address(this));
         _validate(poolAmounts[_token] <= balance, 49);
         emit Events.IncreasePoolAmount(_token, _amount);
     }
+
     function _decreasePoolAmount(address _token, uint256 _amount) internal {
         poolAmounts[_token] = poolAmounts[_token].sub(_amount, Errors.VAULT_POOLAMOUNT_EXCEEDED);
         _validate(reservedAmounts[_token] <= poolAmounts[_token], 50);
         emit Events.DecreasePoolAmount(_token, _amount);
     }
+
     function _increaseReservedAmount(address _token, uint256 _amount) internal {
         reservedAmounts[_token] = reservedAmounts[_token].add(_amount);
         _validate(reservedAmounts[_token] <= poolAmounts[_token], 52);
         emit Events.IncreaseReservedAmount(_token, _amount);
     }
+
     function _decreaseReservedAmount(address _token, uint256 _amount) internal {
         reservedAmounts[_token] = reservedAmounts[_token].sub(_amount, Errors.VAULT_INSUFFICIENT_RESERVE);
         emit Events.DecreaseReservedAmount(_token, _amount);
     }
+
     function _increaseGuaranteedUsd(address _token, uint256 _usdAmount) internal {
         guaranteedUsd[_token] = guaranteedUsd[_token].add(_usdAmount);
         emit Events.IncreaseGuaranteedUsd(_token, _usdAmount);
     }
+
     function _decreaseGuaranteedUsd(address _token, uint256 _usdAmount) internal {
         guaranteedUsd[_token] = guaranteedUsd[_token].sub(_usdAmount);
         emit Events.DecreaseGuaranteedUsd(_token, _usdAmount);
     }
+
     function _increaseGlobalShortSize(address _token, uint256 _amount) internal {
         globalShortSizes[_token] = globalShortSizes[_token].add(_amount);
         uint256 maxSize = maxGlobalShortSizes[_token];
@@ -1584,6 +1568,7 @@ abstract contract VaultInternal is VaultSettings {
             require(globalShortSizes[_token] <= maxSize, Errors.VAULT_MAX_SHORTS_EXCEEDED);
         }
     }
+
     function _decreaseGlobalShortSize(address _token, uint256 _amount) internal {
         uint256 size = globalShortSizes[_token];
         if (_amount > size) {
@@ -1592,15 +1577,18 @@ abstract contract VaultInternal is VaultSettings {
         }
         globalShortSizes[_token] = size.sub(_amount);
     }
+
     function _validateManager() internal view {
         if (inManagerMode) {
             _validate(isManager[msg.sender], 54);
         }
     }
+
     function _validateGasPrice() internal view {
         if (maxGasPrice == 0) {return;}
         _validate(tx.gasprice <= maxGasPrice, 55);
     }
+
     function _validatePosition(uint256 _size, uint256 _collateral) internal view {
         if (_size == 0) {
             _validate(_collateral == 0, 39);
@@ -1608,11 +1596,13 @@ abstract contract VaultInternal is VaultSettings {
         }
         _validate(_size >= _collateral, 40);
     }
+
     function _validateRouter(address _account) internal view {
         if (msg.sender == _account) {return;}
         if (msg.sender == router) {return;}
         _validate(approvedRouters[_account][msg.sender], 41);
     }
+
     function _validateTokens(address _collateralToken, address _indexToken, bool _isLong) internal view {
         if (_isLong) {
             _validate(_collateralToken == _indexToken, 42);
@@ -1625,12 +1615,13 @@ abstract contract VaultInternal is VaultSettings {
         _validate(!stableTokens[_indexToken], 47);
         _validate(shortableTokens[_indexToken], 48);
     }
+
     function _validateBufferAmount(address _token) internal view {
         if (poolAmounts[_token] < bufferAmounts[_token]) {
             revert(Errors.VAULT_POOLAMOUNT_BUFFER);
         }
     }
-    /* views */
+
     function getNextGlobalShortAveragePrice(address _indexToken, uint256 _nextPrice, uint256 _sizeDelta) public view returns (uint256) {
         uint256 size = globalShortSizes[_indexToken];
         uint256 averagePrice = globalShortAveragePrices[_indexToken];
@@ -1641,6 +1632,7 @@ abstract contract VaultInternal is VaultSettings {
         uint256 divisor = hasProfit ? nextSize.sub(delta) : nextSize.add(delta);
         return _nextPrice.mul(nextSize).div(divisor);
     }
+
     function getNextAveragePrice(address _indexToken, uint256 _size, uint256 _averagePrice, bool _isLong, uint256 _nextPrice, uint256 _sizeDelta, uint256 _lastIncreasedTime) public view returns (uint256) {
         (bool hasProfit, uint256 delta) = getDelta(_indexToken, _size, _averagePrice, _isLong, _lastIncreasedTime);
         uint256 nextSize = _size.add(_sizeDelta);
@@ -1652,6 +1644,7 @@ abstract contract VaultInternal is VaultSettings {
         }
         return _nextPrice.mul(nextSize).div(divisor);
     }
+
     function getNextFundingRate(address _token) public override view returns (uint256) {
         if (lastFundingTimes[_token].add(fundingInterval) > block.timestamp) {return 0;}
         uint256 intervals = block.timestamp.sub(lastFundingTimes[_token]).div(fundingInterval);
@@ -1660,38 +1653,61 @@ abstract contract VaultInternal is VaultSettings {
         uint256 _fundingRateFactor = stableTokens[_token] ? stableFundingRateFactor : fundingRateFactor;
         return _fundingRateFactor.mul(reservedAmounts[_token]).mul(intervals).div(poolAmount);
     }
+
     function getEntryFundingRate(address _collateralToken, address _indexToken, bool _isLong) public view returns (uint256) {
         return vaultUtils.getEntryFundingRate(_collateralToken, _indexToken, _isLong);
     }
+
     function getTargetZkusdAmount(address _token) public override view returns (uint256) {
         uint256 supply = IERC20(zkusd).totalSupply();
         if (supply == 0) {return 0;}
         uint256 weight = tokenWeights[_token];
         return weight.mul(supply).div(totalTokenWeights);
     }
+
     function getRedemptionAmount(address _token, uint256 _zkusdAmount) public override view returns (uint256) {
         uint256 price = getMaxPrice(_token);
         uint256 redemptionAmount = _zkusdAmount.mul(Constants.PRICE_PRECISION).div(price);
         return adjustForDecimals(redemptionAmount, zkusd, _token);
     }
+
     function getFeeBasisPoints(address _token, uint256 _zkusdDelta, uint256 _feeBasisPoints, uint256 _taxBasisPoints, bool _increment) public override view returns (uint256) {
         return vaultUtils.getFeeBasisPoints(_token, _zkusdDelta, _feeBasisPoints, _taxBasisPoints, _increment);
     }
+
     function getPositionKey(address _account, address _collateralToken, address _indexToken, bool _isLong) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(_account, _collateralToken, _indexToken, _isLong));
     }
+
     function getPosition(address _account, address _collateralToken, address _indexToken, bool _isLong) public override view returns (uint256, uint256, uint256, uint256, uint256, uint256, bool, uint256) {
         bytes32 key = getPositionKey(_account, _collateralToken, _indexToken, _isLong);
         DataTypes.Position memory position = positions[key];
         uint256 realisedPnl = position.realisedPnl > 0 ? uint256(position.realisedPnl) : uint256(- position.realisedPnl);
         return (position.size, position.collateral, position.averagePrice, position.entryFundingRate, position.reserveAmount, realisedPnl, position.realisedPnl >= 0, position.lastIncreasedTime);
     }
+
+    function getPositionDelta(address _account, address _collateralToken, address _indexToken, bool _isLong) public view returns (bool, uint256) {
+        bytes32 key = getPositionKey(_account, _collateralToken, _indexToken, _isLong);
+        DataTypes.Position memory position = positions[key];
+        return getDelta(_indexToken, position.size, position.averagePrice, _isLong, position.lastIncreasedTime);
+    }
+
     function getFundingFee(address _account, address _collateralToken, address _indexToken, bool _isLong, uint256 _size, uint256 _entryFundingRate) public view returns (uint256) {
         return vaultUtils.getFundingFee(_account, _collateralToken, _indexToken, _isLong, _size, _entryFundingRate);
     }
-    function getMinPrice(address _token) public override view returns (uint256) {
-        return IVaultPriceFeed(priceFeed).getPrice(_token, false, includeAmmPrice, useSwapPricing);
+
+    function getMaxPrice(address _token) public override view returns (uint256) {
+        if (equityTokens[_token] && allowStaleEquityPrice)
+            return IVaultPriceFeed(priceFeed).getPrice(_token, true, false);
+        return IVaultPriceFeed(priceFeed).getPrice(_token, true, true);
     }
+
+    function getMinPrice(address _token) public override view returns (uint256) {
+        if (equityTokens[_token] && allowStaleEquityPrice)
+            return IVaultPriceFeed(priceFeed).getPrice(_token, false, false);
+        return IVaultPriceFeed(priceFeed).getPrice(_token, false, true);
+    }
+
     function getDelta(address _indexToken, uint256 _size, uint256 _averagePrice, bool _isLong, uint256 _lastIncreasedTime) public override view returns (bool, uint256) {
         _validate(_averagePrice > 0, 38);
         uint256 price = _isLong ? getMinPrice(_indexToken) : getMaxPrice(_indexToken);
@@ -1709,36 +1725,44 @@ abstract contract VaultInternal is VaultSettings {
         }
         return (hasProfit, delta);
     }
+
     function usdToTokenMax(address _token, uint256 _usdAmount) public view returns (uint256) {
         if (_usdAmount == 0) {return 0;}
         return usdToToken(_token, _usdAmount, getMinPrice(_token));
     }
+
     function usdToTokenMin(address _token, uint256 _usdAmount) public view returns (uint256) {
         if (_usdAmount == 0) {return 0;}
         return usdToToken(_token, _usdAmount, getMaxPrice(_token));
     }
+
     function tokenToUsdMin(address _token, uint256 _tokenAmount) public override view returns (uint256) {
         if (_tokenAmount == 0) {return 0;}
         uint256 price = getMinPrice(_token);
         uint256 decimals = tokenDecimals[_token];
         return _tokenAmount.mul(price).div(10 ** decimals);
     }
+
     function usdToToken(address _token, uint256 _usdAmount, uint256 _price) public view returns (uint256) {
         if (_usdAmount == 0) {return 0;}
         uint256 decimals = tokenDecimals[_token];
         return _usdAmount.mul(10 ** decimals).div(_price);
     }
+
     function adjustForDecimals(uint256 _amount, address _tokenDiv, address _tokenMul) public view returns (uint256) {
         uint256 decimalsDiv = _tokenDiv == zkusd ? Constants.ZKUSD_DECIMALS : tokenDecimals[_tokenDiv];
         uint256 decimalsMul = _tokenMul == zkusd ? Constants.ZKUSD_DECIMALS : tokenDecimals[_tokenMul];
         return _amount.mul(10 ** decimalsMul).div(10 ** decimalsDiv);
     }
+
     function validateLiquidation(address _account, address _collateralToken, address _indexToken, bool _isLong, bool _raise) override public view returns (uint256, uint256) {
         return vaultUtils.validateLiquidation(_account, _collateralToken, _indexToken, _isLong, _raise);
     }
+
     function getPositionFee(address _account, address _collateralToken, address _indexToken, bool _isLong, uint256 _sizeDelta) public view returns (uint256) {
         return vaultUtils.getPositionFee(_account, _collateralToken, _indexToken, _isLong, _sizeDelta);
     }
+
     function allWhitelistedTokensLength() external override view returns (uint256) {
         return allWhitelistedTokens.length;
     }
@@ -1746,9 +1770,11 @@ abstract contract VaultInternal is VaultSettings {
     function addRouter(address _router) external {
         approvedRouters[msg.sender][_router] = true;
     }
+
     function removeRouter(address _router) external {
         approvedRouters[msg.sender][_router] = false;
     }
+
     function upgradeVault(address _newVault, address _token, uint256 _amount) external {
         _onlyGov();
         IERC20(_token).safeTransfer(_newVault, _amount);
@@ -1776,6 +1802,7 @@ contract Vault is VaultInternal {
         fundingRateFactor = _fundingRateFactor;
         stableFundingRateFactor = _stableFundingRateFactor;
     }
+
     function clearTokenConfig(address _token) external {
         _onlyGov();
         _validate(whitelistedTokens[_token], 13);
@@ -1789,6 +1816,7 @@ contract Vault is VaultInternal {
         delete shortableTokens[_token];
         whitelistedTokenCount = whitelistedTokenCount.sub(1);
     }
+
     function withdrawFees(address _token, address _receiver) external override returns (uint256) {
         _onlyGov();
         uint256 amount = feeReserves[_token];
@@ -1797,6 +1825,7 @@ contract Vault is VaultInternal {
         _transferOut(_token, amount, _receiver);
         return amount;
     }
+
     function directPoolDeposit(address _token) external override nonReentrant {
         _validate(whitelistedTokens[_token], 14);
         uint256 tokenAmount = _transferIn(_token);
@@ -1804,10 +1833,10 @@ contract Vault is VaultInternal {
         _increasePoolAmount(_token, tokenAmount);
         emit Events.DirectPoolDeposit(_token, tokenAmount);
     }
+
     function buyZKUSD(address _token, address _receiver) external override nonReentrant returns (uint256) {
         _validateManager();
         _validate(whitelistedTokens[_token], 16);
-        useSwapPricing = true;
         uint256 tokenAmount = _transferIn(_token);
         _validate(tokenAmount > 0, 17);
         updateCumulativeFundingRate(_token, _token);
@@ -1823,13 +1852,12 @@ contract Vault is VaultInternal {
         _increasePoolAmount(_token, amountAfterFees);
         IZKUSD(zkusd).mint(_receiver, mintAmount);
         emit Events.BuyZKUSD(_receiver, _token, tokenAmount, mintAmount, feeBasisPoints);
-        useSwapPricing = false;
         return mintAmount;
     }
+
     function sellZKUSD(address _token, address _receiver) external override nonReentrant returns (uint256) {
         _validateManager();
         _validate(whitelistedTokens[_token], 19);
-        useSwapPricing = true;
         uint256 zkusdAmount = _transferIn(zkusd);
         _validate(zkusdAmount > 0, 20);
         updateCumulativeFundingRate(_token, _token);
@@ -1845,15 +1873,14 @@ contract Vault is VaultInternal {
         _validate(amountOut > 0, 22);
         _transferOut(_token, amountOut, _receiver);
         emit Events.SellZKUSD(_receiver, _token, zkusdAmount, amountOut, feeBasisPoints);
-        useSwapPricing = false;
         return amountOut;
     }
+
     function swap(address _tokenIn, address _tokenOut, address _receiver) external override nonReentrant returns (uint256) {
         _validate(isSwapEnabled, 23);
         _validate(whitelistedTokens[_tokenIn], 24);
         _validate(whitelistedTokens[_tokenOut], 25);
         _validate(_tokenIn != _tokenOut, 26);
-        useSwapPricing = true;
         updateCumulativeFundingRate(_tokenIn, _tokenIn);
         updateCumulativeFundingRate(_tokenOut, _tokenOut);
         uint256 amountIn = _transferIn(_tokenIn);
@@ -1874,9 +1901,9 @@ contract Vault is VaultInternal {
         _validateBufferAmount(_tokenOut);
         _transferOut(_tokenOut, amountOutAfterFees, _receiver);
         emit Events.Swap(_receiver, _tokenIn, _tokenOut, amountIn, amountOut, amountOutAfterFees, feeBasisPoints);
-        useSwapPricing = false;
         return amountOutAfterFees;
     }
+
     function increasePosition(address _account, address _collateralToken, address _indexToken, uint256 _sizeDelta, bool _isLong) external override nonReentrant {
         _validate(isLeverageEnabled, 28);
         _validateGasPrice();
@@ -1897,18 +1924,18 @@ contract Vault is VaultInternal {
         uint256 fee = _collectMarginFees(_account, _collateralToken, _indexToken, _isLong, _sizeDelta, position.size, position.entryFundingRate);
         uint256 collateralDelta = _transferIn(_collateralToken);
         uint256 collateralDeltaUsd = tokenToUsdMin(_collateralToken, collateralDelta);
-        
+
         position.collateral = position.collateral.add(collateralDeltaUsd);
         _validate(position.collateral >= fee, 29);
         position.collateral = position.collateral.sub(fee);
         position.entryFundingRate = getEntryFundingRate(_collateralToken, _indexToken, _isLong);
         position.size = position.size.add(_sizeDelta);
         position.lastIncreasedTime = block.timestamp;
-        
+
         _validate(position.size > 0, 30);
         _validatePosition(position.size, position.collateral);
         validateLiquidation(_account, _collateralToken, _indexToken, _isLong, true);
-        
+
         uint256 reserveDelta = usdToTokenMax(_collateralToken, _sizeDelta);
         position.reserveAmount = position.reserveAmount.add(reserveDelta);
         _increaseReservedAmount(_collateralToken, reserveDelta);
@@ -1929,16 +1956,17 @@ contract Vault is VaultInternal {
         emit Events.IncreasePosition(key, _account, _collateralToken, _indexToken, collateralDeltaUsd, _sizeDelta, _isLong, price, fee);
         emit Events.UpdatePosition(key, position.size, position.collateral, position.averagePrice, position.entryFundingRate, position.reserveAmount, position.realisedPnl, price);
     }
+
     function decreasePosition(address _account, address _collateralToken, address _indexToken, uint256 _collateralDelta, uint256 _sizeDelta, bool _isLong, address _receiver) external override nonReentrant returns (uint256) {
         _validateGasPrice();
         _validateRouter(_account);
         return _decreasePosition(_account, _collateralToken, _indexToken, _collateralDelta, _sizeDelta, _isLong, _receiver);
     }
+
     function liquidatePosition(address _account, address _collateralToken, address _indexToken, bool _isLong, address _feeReceiver) external override nonReentrant {
         if (inPrivateLiquidationMode) {
             _validate(isLiquidator[msg.sender], 34);
         }
-        includeAmmPrice = false;
         updateCumulativeFundingRate(_collateralToken, _indexToken);
         bytes32 key = getPositionKey(_account, _collateralToken, _indexToken, _isLong);
         DataTypes.Position memory position = positions[key];
@@ -1947,7 +1975,6 @@ contract Vault is VaultInternal {
         _validate(liquidationState != 0, 36);
         if (liquidationState == 2) {
             _decreasePosition(_account, _collateralToken, _indexToken, 0, position.size, _isLong, _account);
-            includeAmmPrice = true;
             return;
         }
         uint256 feeTokens = usdToTokenMin(_collateralToken, marginFees);
@@ -1971,8 +1998,8 @@ contract Vault is VaultInternal {
         delete positions[key];
         _decreasePoolAmount(_collateralToken, usdToTokenMin(_collateralToken, liquidationFeeUsd));
         _transferOut(_collateralToken, usdToTokenMin(_collateralToken, liquidationFeeUsd), _feeReceiver);
-        includeAmmPrice = true;
     }
+
     function updateCumulativeFundingRate(address _collateralToken, address _indexToken) public {
         bool shouldUpdate = vaultUtils.updateCumulativeFundingRate(_collateralToken, _indexToken);
         if (!shouldUpdate) {
@@ -1990,6 +2017,7 @@ contract Vault is VaultInternal {
         lastFundingTimes[_collateralToken] = block.timestamp.div(fundingInterval).mul(fundingInterval);
         emit Events.UpdateFundingRate(_collateralToken, cumulativeFundingRates[_collateralToken]);
     }
+
     function _decreasePosition(address _account, address _collateralToken, address _indexToken, uint256 _collateralDelta, uint256 _sizeDelta, bool _isLong, address _receiver) internal returns (uint256) {
         vaultUtils.validateDecreasePosition(_account, _collateralToken, _indexToken, _collateralDelta, _sizeDelta, _isLong, _receiver);
         updateCumulativeFundingRate(_collateralToken, _indexToken);
