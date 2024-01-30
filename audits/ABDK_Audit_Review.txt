@@ -1,9 +1,0 @@
-The major issues raised in the ABDK Audit have been resolved.
-
-1. CVF-42, CVF-51: The mentioned functions have been removed, the intention of these functions was to support future features. We have decided to keep the supported features compact, when new features are needed the new code will be sent for another audit
-
-2. CVF-87: The function is meant to be re-callable, token whitelisting is currently controlled by a Timelock contract with a delay of 1 day.
-
-3. CVF-90: The returned value was not affecting any behaviour, but for correctness it has been fixed.
-
-4. CVF-130: The spread between prices is assumed to be small, it is large only if the prices are volatile, in which case, a larger spread is desirable to protect the assets in the system
